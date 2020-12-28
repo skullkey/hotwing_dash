@@ -44,43 +44,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
         # Trim the overlap
         # profile1 = Profile.trim_overlap(profile1)
         # profile2 = Profile.trim_overlap(profile2)
-        """
-        # MOVE TO STARTING POSITION
-        m.gc.fast_move( {'x':0, 'u':0, 'y' : profile1.right_midpoint[1], 'v': profile2.right_midpoint[1]})
-
-
-        # SLOW CUT TO TRAILING EDGE START
-        te_start_1 = profile1.right_midpoint
-        te_start_2 = profile2.right_midpoint
-
-        te_start_1[0] = profile_max - te_start_1[0]
-        te_start_2[0] = profile_max - te_start_2[0]
-
-        pos = m.calculate_move(
-                te_start_1 - Coordinate(le_offset, 0),
-                te_start_2 - Coordinate(le_offset, 0))
         
-        
-        # CUT TOP PROFILE
-        self._cut_top_profile(profile1, profile2, dwell_time)
-
-        # CUT BOTTOM PROFILE
-        # MOVE TO STARTING POSITION
-        # FAST MOVE TO X=0, U=0
-        # FAST LIFT TO SAFE HEIGHT
-        # FAST MOVE TO TRAILING EDGE "TAIL STOCK"
-        # FAST MOVE TO FOAM HEIGHT
-        # CUT DOWN TO Y=0,V=0
-        # LIFT TO FOAM HEIGHT
-        # FAST MOVE TO X=0, U=0
-        # FAST MOVE TO Y=0,V=0
-
-        """
-
-
-
-
-
         # MOVE TO SAFE HEIGHT
         self._move_to_safe_height()
 
@@ -90,35 +54,36 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
                 profile2.left_midpoint- Coordinate(le_offset, 0))
 
         ## MOVE FAST HORIZONTALLY TO SPOT ABOVE LE OFFSET
-        m.gc.fast_move( {'x':pos['x'],'u':pos['u']} )
+        m.gc.fast_move( {'x':pos['x'],'u':pos['u']}, ['initial_move'] )
 
         ## MOVE DOWN TO JUST ABOVE FOAM
-        m.gc.fast_move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize"] )
+        m.gc.fast_move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize", 'initial_move'] )
 
         # CUT DOWN TO LEADING EDGE OFFSET
-        m.gc.move(pos)
+        m.gc.move(pos, ['initial_move'])
         self.machine.gc.dwell(dwell_time)
 
         # CUT INWARDS TO LEADING EDGE
-        m.gc.move(m.calculate_move(profile1.left_midpoint, profile2.left_midpoint))
+        m.gc.move(m.calculate_move(profile1.left_midpoint, profile2.left_midpoint), ['initial_move'])
         self.machine.gc.dwell(dwell_time)
 
         # CUT THE TOP PROFILE
-        self._cut_top_profile(profile1, profile2, dwell_time)
+        self._cut_top_profile(profile1, profile2, dwell_time, ['profile'])
 
         # CUT TO TRAILING EDGE AT MIDDLE OF PROFILE
         m.gc.move(
             m.calculate_move(
                 profile1.right_midpoint,
                 profile2.right_midpoint)
-        )
+        , ['profile'])
         self.machine.gc.dwell(dwell_time)
 
         # CUT TO TRAILING EDGE OFFSET
         m.gc.move(
             m.calculate_move(
                 profile1.right_midpoint + Coordinate(te_offset,0),
-                profile2.right_midpoint + Coordinate(te_offset,0))
+                profile2.right_midpoint + Coordinate(te_offset,0)),
+                ['profile']
         )
         self.machine.gc.dwell(dwell_time)
 
@@ -126,84 +91,86 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
         m.gc.move(
             m.calculate_move(
                 profile1.right_midpoint,
-                profile2.right_midpoint)
+                profile2.right_midpoint),
+            ['profile']
         )
 
         # CUT BOTTOM PROFILE
-        self._cut_bottom_profile(profile1, profile2, dwell_time)
+        self._cut_bottom_profile(profile1, profile2, dwell_time, ['profile'])
 
         # CUT TO LEADING EDGE
-        m.gc.move(m.calculate_move(profile1.left_midpoint, profile2.left_midpoint))
+        m.gc.move(m.calculate_move(profile1.left_midpoint, profile2.left_midpoint), ['profile'])
 
         # CUT TO LEADING EDGE OFFSET
         m.gc.move(
             m.calculate_move(
                 profile1.left_midpoint - Coordinate(le_offset,0),
-                profile2.left_midpoint - Coordinate(le_offset,0))
+                profile2.left_midpoint - Coordinate(le_offset,0)), ['profile']
         )
         self.machine.gc.dwell(dwell_time)
 
         # CUT UPWARD TO JUST ABOVE FOAM
-        m.gc.move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize"] )
+        m.gc.move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize","done_profile"] )
         self.machine.gc.dwell(dwell_time*2)
 
         # MOVE TO SAFE HEIGHT
-        self._move_to_safe_height()
+        m.gc.fast_move( {'y':m.safe_height,'v':m.safe_height}, ["do_not_normalize", "done_profile"] )
 
-        if m.panel.left_rib.tail_stock:
-            # calculate position above tail stock
-            r1_stock = m.panel.left_rib.tail_stock
-            r2_stock = m.panel.right_rib.tail_stock
+
+        if m.panel.left_rib.front_stock:
+            # calculate position above front stock
+            r1_stock = m.panel.left_rib.front_stock
+            r2_stock = m.panel.right_rib.front_stock
             
             ts_pos = m.calculate_move(
                 Coordinate(profile1.right_midpoint.x - r1_stock + m.kerf[0],0),
                 Coordinate(profile2.right_midpoint.x - r2_stock + m.kerf[1],0)
             )
 
-            # MOVE HORIZONTALLY TO ABOVE TAIL STOCK
-            m.gc.fast_move({'x':ts_pos['x'],'u':ts_pos['u']} )
+            # MOVE HORIZONTALLY TO ABOVE FRONT STOCK
+            m.gc.fast_move({'x':ts_pos['x'],'u':ts_pos['u']},["front_stock"] )
 
             # MOVE DOWN TO JUST ABOVE FOAM
-            m.gc.fast_move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize"] )
+            m.gc.fast_move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize","front_stock"] )
 
             # CUT DOWN TO 0 HEIGHT
-            m.gc.move( {'y':0,'v':0}, ["do_not_normalize"] )
+            m.gc.move( {'y':0,'v':0}, ["do_not_normalize", "front_stock"] )
 
             # CUT UP TO JUST ABOVE FOAM
-            m.gc.move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize"] )
-            self.machine.gc.dwell(dwell_time*2)
+            m.gc.move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize", "front_stock"] )
             
             # MOVE UP TO SAFE HEIGHT
-            self._move_to_safe_height()
+            m.gc.fast_move( {'y':m.safe_height,'v':m.safe_height}, ["do_not_normalize", "front_stock"] )
 
 
-        if m.panel.left_rib.front_stock:
-            r1_stock = self.machine.panel.left_rib.front_stock
-            r2_stock = self.machine.panel.right_rib.front_stock
+        if m.panel.left_rib.tail_stock:
+            r1_stock = self.machine.panel.left_rib.tail_stock
+            r2_stock = self.machine.panel.right_rib.tail_stock
 
             fs_pos = m.calculate_move(
                 Coordinate(profile1.left_midpoint.x + r1_stock - m.kerf[0],0),
                 Coordinate(profile2.left_midpoint.x + r2_stock - m.kerf[1],0)
             )
 
-            # MOVE HORIZONTALLY TO ABOVE FRONT STOCK
-            m.gc.fast_move({'x':fs_pos['x'],'u':fs_pos['u']} )
+            # MOVE HORIZONTALLY TO ABOVE TAIL STOCK
+            m.gc.fast_move({'x':fs_pos['x'],'u':fs_pos['u']}, ['tail_stock'] )
 
             # MOVE DOWN TO JUST ABOVE FOAM
-            m.gc.fast_move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize"] )
+            m.gc.fast_move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize", "tail_stock"] )
 
             # CUT DOWN TO 0 HEIGHT
-            m.gc.move( {'y':0,'v':0}, ["do_not_normalize"] )
+            m.gc.move( {'y':0,'v':0}, ["do_not_normalize", "tail_stock"] )
 
             # CUT UP TO JUST ABOVE FOAM
-            m.gc.move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize"] )
+            m.gc.move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize", "tail_stock"] )
 
             # MOVE UP TO SAFE HEIGHT
-            self._move_to_safe_height()
+            m.gc.fast_move( {'y':m.safe_height,'v':m.safe_height}, ["do_not_normalize", "tail_stock"] )
 
 
 
-    def _cut_top_profile(self, profile1, profile2, dwell_time):
+
+    def _cut_top_profile(self, profile1, profile2, dwell_time, options=[]):
         # cut top profile
         c1 = profile1.top.coordinates[0]
         c2 = profile2.top.coordinates[0]
@@ -219,18 +186,18 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             pct = i / self.machine.profile_points
             c1 = profile1.top.interpolate_around_profile_dist_pct(pct)
             c2 = profile2.top.interpolate_around_profile_dist_pct(pct)
-            self.machine.gc.move(self.machine.calculate_move(c1, c2))
+            self.machine.gc.move(self.machine.calculate_move(c1, c2), options)
             if i == 0:
                 # dwell on first point
                 self.machine.gc.dwell(dwell_time)
 
         # cut to last point
         self.machine.gc.move(self.machine.calculate_move(profile1.top.coordinates[-1],
-                                                        profile2.top.coordinates[-1]))
+                                                        profile2.top.coordinates[-1]), options)
         self.machine.gc.dwell(dwell_time)
 
 
-    def _cut_bottom_profile(self, profile1, profile2, dwell_time):
+    def _cut_bottom_profile(self, profile1, profile2, dwell_time, options):
         # cutting profile from right to left
         c1 = profile1.top.coordinates[-1]
         c2 = profile2.top.coordinates[-1]
@@ -244,7 +211,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             pct = i / self.machine.profile_points
             c1 = profile1.bottom.interpolate_around_profile_dist_pct(pct)
             c2 = profile2.bottom.interpolate_around_profile_dist_pct(pct)
-            self.machine.gc.move(self.machine.calculate_move(c1, c2))
+            self.machine.gc.move(self.machine.calculate_move(c1, c2), options)
             if i == self.machine.profile_points:
                 # dwell on first point
                 self.machine.gc.dwell(dwell_time)
