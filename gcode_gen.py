@@ -7,6 +7,7 @@ from hotwing_core.coordinate import Coordinate
 from hotwing_cli.config_options import CONFIG_OPTIONS, get_config, read_config
 from hotwing_cli.validators import validate_side, vaidate_config_file, validate_trim, validate_kerf
 from hotwing_core.gcode import Gcode
+import datetime
 
 
 from importlib import reload
@@ -16,6 +17,9 @@ reload(trailing_cutting_strategy)
 
 import config_options
 reload(config_options)
+
+import gcode_formatter
+reload(gcode_formatter)
 
 class GcodeGen():
 
@@ -80,6 +84,24 @@ class GcodeGen():
                 units=machine.units, 
                 feedrate=machine.feedrate )
 
+        prepend_list = []
+        if get_config("Gcode","ConfigAsComment"):
+            prepend_list.append("Generated: %s" % datetime.datetime.now().isoformat())
+            config_str = self.config.config_as_str()
+            prepend_list.extend(config_str.split("\n"))
+            prepend = "\n;".join(prepend_list)
+            prepend = ";" + prepend
+        else:
+            prepend = None
+
+       
+
+        machine.gc.gcode_formatter = gcode_formatter.CustomGcodeFormatter(machine.gc,
+                             get_config("Gcode","AxisMapping"),
+                             get_config("Gcode","GcodeWireOn"),
+                             get_config("Gcode","GcodeWireOff"),
+                             prepend)
+
         cs = trailing_cutting_strategy.TrailingEdgeCuttingStrategy(machine)
 
         if side == "right":
@@ -96,5 +118,7 @@ class GcodeGen():
                vertical_offset_left, 
                vertical_offset_right, 
                vertical_align_profiles)
+
+        machine.gc.normalize()
 
         return machine.gc

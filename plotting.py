@@ -1,6 +1,7 @@
 import numpy as np
 import plotly.graph_objects as go
 from hotwing_core.utils import isect_line_plane_v3
+from operator import itemgetter
 
 
 class ParsedGcode:
@@ -168,43 +169,260 @@ class GcodePlotter():
     def plot_gcode(self, pgcode : ParsedGcode, num_of_points=-1, draw_cutting_path = True, draw_foam_block=True):
         '''returns a plotly figure object visualizing the cut path (optional) and the wing foam paths'''
 
+        stats = {}
         pgcode_wing = self.project_coords(pgcode, self.mbox, self.fbox)
 
         if num_of_points == -1:
             num_of_points = len(pgcode_wing)
 
         wing_vertices = self.calc_vertices(pgcode_wing, self.fbox, num_of_points )
+        stats['wing'] = self.summarize_vertices(wing_vertices)
 
-        fig = go.Figure(data=[
-            go.Mesh3d(
-                **wing_vertices,
-                showscale=False,
-                colorscale=[[0, 'green'], [1, 'red']],
-                cmin = 0, cmax=1
-            )
-        ])
+        fig = go.Figure() 
         fig = self.setup_fig(fig)
+
+
+        
 
         if draw_cutting_path:
             pillar_vertices = self.calc_vertices(pgcode, self.mbox, num_of_points )
+            stats['machine'] = self.summarize_vertices(pillar_vertices)
             fig.add_trace(
                 go.Mesh3d(
                     **pillar_vertices, 
                     opacity=0.50, 
                     showscale=False, 
                     cmin=0, cmax=1,
-                    colorscale=[[0, 'gold'],[1, 'red']],)
+                    colorscale=[[0, 'gold'],[1, 'red']],
+                    showlegend= True, name='Cut')
                 )
             
         if draw_foam_block:
             foam_vertices = self.make_foam_block()
+            stats['block'] = self.summarize_vertices(foam_vertices)
+
             fig.add_trace(
                 go.Mesh3d(
                     **foam_vertices, 
                     color='gray', 
-                    opacity=0.50)
+                    opacity=0.50, showlegend=True, name='Foam')
                 )
             
         
+        fig.add_trace(
+            go.Mesh3d(
+                **wing_vertices,
+                showscale=False,
+                colorscale=[[0, 'green'], [1, 'red']],
+                cmin = 0, cmax=1, showlegend=True, name='Wing'
+            )
+        )
+
+        
         #fig.update_scenes(xaxis_autorange="reversed")
-        return fig
+        return fig, stats
+
+
+    def plot_gcode_2dprofile(self, pgcode : ParsedGcode, num_of_points=-1, 
+                draw_cutting_path = True, draw_foam_block=True, draw_machine_block = True):
+        '''returns a plotly figure object visualizing the cut path (optional) and the wing foam paths'''
+
+        stats = {}
+        pgcode_wing = self.project_coords(pgcode, self.mbox, self.fbox)
+
+
+        fig = go.Figure() 
+        fig = self.setup_fig(fig)
+
+        if draw_cutting_path:
+            
+            fig.add_trace(
+                go.Scatter(
+                    x = pgcode.X, 
+                    y = pgcode.Y,
+                    opacity=0.50, name="Cut Left", visible='legendonly',
+                    line={"color":"yellow"}
+                    )
+                )
+            fig.add_trace(
+                go.Scatter(
+                    x = pgcode.U, 
+                    y = pgcode.V,
+                    opacity=0.50, name="Cut Right", visible='legendonly',
+                    line={"color":"darkgoldenrod"}
+                    )
+                )
+
+        if draw_foam_block:
+            x0=self.fbox.inset
+            y0=self.fbox.bottom
+            x1=self.fbox.inset + self.fbox.depth
+            y1=self.fbox.bottom + self.fbox.height
+            fig.add_trace(
+                go.Scatter(
+                    x = [x0,x1,x1,x0,x0], 
+                    y = [y0,y0,y1,y1,y0],
+                    name = "Foam",
+                    line={"color":"gray"}
+                )
+            )
+            
+
+        # draw machine extents   
+        if draw_machine_block:
+            
+            x0=self.mbox.inset
+            y0=self.mbox.bottom
+            x1=self.mbox.inset + self.mbox.depth
+            y1=self.mbox.bottom + self.mbox.height
+            fig.add_trace(
+                go.Scatter(
+                    x = [x0,x1,x1,x0], 
+                    y = [y0,y0,y1,y1],
+                    name = "Machine"
+                )
+            )
+
+        # draw the wing profile
+        fig.add_trace(
+                go.Scatter(
+                    x = pgcode_wing.X, 
+                    y = pgcode_wing.Y,
+                    opacity=0.50, name="Wing Left",
+                    line={"color":"lightgreen"}
+                    )
+                )
+        fig.add_trace(
+            go.Scatter(
+                x = pgcode_wing.U, 
+                y = pgcode_wing.V,
+                opacity=0.50, name="Wing Right",
+                line={"color":"darkgreen"}
+                )
+            )
+
+        
+        #fig.update_scenes(xaxis_autorange="reversed")
+        return fig, stats
+
+
+    def plot_gcode_2dplan(self, pgcode : ParsedGcode, num_of_points=-1, 
+                draw_cutting_path = True, draw_foam_block=True, draw_machine_block = True):
+        '''returns a plotly figure object visualizing the cut path (optional) and the wing foam paths'''
+
+        def argmin(a):
+            return min(enumerate(a), key=itemgetter(1))[0]
+
+        def argmax(a):
+            return max(enumerate(a), key=itemgetter(1))[0]
+
+        stats = {}
+        pgcode_wing = self.project_coords(pgcode, self.mbox, self.fbox)
+
+
+        fig = go.Figure() 
+        fig = self.setup_fig(fig)
+
+        if draw_cutting_path:
+
+            i = argmin(pgcode.X)
+            min_line = (pgcode.X[i], pgcode.U[i])
+            i = argmax(pgcode.X)
+            max_line = (pgcode.X[i], pgcode.U[i])
+
+             
+            x0=self.mbox.left
+            y0=min_line[0]
+
+            x1=self.mbox.left + self.mbox.width
+            y1=min_line[1]
+
+            x2=self.mbox.left + self.mbox.width
+            y2=max_line[1]
+
+            x3=self.mbox.left 
+            y3=max_line[0]
+
+            fig.add_trace(
+                go.Scatter(
+                    x = [x0,x1,x2,x3,x0], 
+                    y = [y0,y1,y2,y3,y0],
+                    name = "Cut Path",
+                    line={"color":"gold"}
+                )
+            )
+
+        if draw_foam_block:
+            x0=self.fbox.left
+            y0=self.fbox.inset
+            x1=self.fbox.left + self.fbox.width
+            y1=self.fbox.inset + self.fbox.depth
+            fig.add_trace(
+                go.Scatter(
+                    x = [x0,x1,x1,x0,x0], 
+                    y = [y0,y0,y1,y1,y0],
+                    name = "Foam",
+                    line={"color":"gray"}
+                )
+            )
+            
+
+        # draw machine extents   
+        if draw_machine_block:
+            
+            x0=self.mbox.left   
+            y0=self.mbox.inset
+            x1=self.mbox.left + self.mbox.width
+            y1=self.mbox.inset + self.mbox.depth
+            fig.add_trace(
+                go.Scatter(
+                    x = [x0,x1,x1,x0,x0], 
+                    y = [y0,y0,y1,y1,y0],
+                    name = "Machine",
+                    line={"color":"black"}
+                    
+                )
+            )
+
+        # draw the wing profile
+        x0 = self.fbox.left
+        y0 = min(pgcode_wing.X)
+
+        x1 = self.fbox.left + self.fbox.width
+        y1 = min(pgcode_wing.U)
+
+        x2 = self.fbox.left + self.fbox.width
+        y2 = max(pgcode_wing.U)
+
+        x3 = self.fbox.left
+        y3 = max(pgcode_wing.X)
+
+
+        fig.add_trace(
+                go.Scatter(
+                    x = [x0,x1,x2,x3, x0], 
+                    y = [y0,y1,y2,y3, y0],
+                    name = "Wing Plan",
+                    line = {"color":"green"}
+                )
+            )
+
+        
+        #fig.update_scenes(xaxis_autorange="reversed")
+        return fig, stats
+
+    def summarize_vertices(self, vertices):
+        result = {}
+        for ax in ('x','y','z'):
+            result[f'min_{ax}'] = np.min(vertices[ax])
+            result[f'max_{ax}'] = np.max(vertices[ax])
+            result[f'dist_{ax}'] = result[f'max_{ax}'] -  result[f'min_{ax}'] 
+
+        if 'intensity' in vertices:
+            result['out_of_bounds'] = np.sum(vertices['intensity'])
+        else:
+            result['out_of_bounds'] = None
+
+        return result
+
+

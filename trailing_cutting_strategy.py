@@ -27,13 +27,20 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
 
         profile_max = max(profile1.right_midpoint.x, profile2.right_midpoint.x)
 
-        if vertical_offset_right is None and vertical_align_profiles == "default":
-            vertical_offset_right = vertical_offset_left
-        
-        if vertical_offset_right is None and vertical_align_profiles == "bottom":
+        if vertical_align_profiles == "default":
+            if vertical_offset_right is None :
+                vertical_offset_right = vertical_offset_left
+            elif vertical_offset_left is None :
+                vertical_offset_left = vertical_offset_right
+        elif vertical_align_profiles == "bottom":
             left_profile_bottom = profile1.bottom.bounds[0].y
             right_profile_bottom = profile2.bottom.bounds[0].y
-            vertical_offset_right = vertical_offset_left + left_profile_bottom - right_profile_bottom
+            if vertical_offset_right is None :
+                vertical_offset_right = vertical_offset_left + left_profile_bottom - right_profile_bottom
+            elif vertical_offset_left is None :
+                vertical_offset_left = vertical_offset_right + right_profile_bottom - left_profile_bottom
+
+
 
         profile1.top.coordinates = [Coordinate(profile_max - c.x + horizontal_offset, c.y + vertical_offset_left) for c in reversed(profile1.top.coordinates)]
         profile1.bottom.coordinates = [Coordinate(profile_max - c.x +horizontal_offset, c.y + vertical_offset_left) for c in reversed(profile1.bottom.coordinates)]
