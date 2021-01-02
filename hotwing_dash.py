@@ -36,35 +36,62 @@ inline_checklist = dbc.FormGroup(
                 ]
             )
 
-app.layout = html.Div([
-    dbc.Alert([html.H4("Hot Wing", className="alert-heading"),], color="dark"),
+
+gen_tab_layout =  html.Div([
     
     html.Div(id='output-state'),
+   
     dbc.Row([
         dbc.Col(
-            dbc.Button(id='submit-button-state', n_clicks=0, children='Submit', color="primary", block=True),
-        ),
-        dbc.Col(
-            dbc.Form([inline_checklist])
-        )
-    ]),
-    dbc.Row(
-            [
-                dbc.Col(html.Div(
-                        dash_editor_components.PythonEditor(
-                            id='input', value = "".join(lines)
-                        ), className="panel panel-body"
+            dbc.Card(
+                dbc.CardBody([
+                    dbc.Button(id='submit-button-state', n_clicks=0, children='Generate', color="primary", block=True),
+                    dash_editor_components.PythonEditor(
+                        id='input', value = "".join(lines)
                     )
-                ),
-                dbc.Col(html.Div([dcc.Graph(id='graph_profile'),
-                                  dcc.Graph(id='graph_plan'),
-                                  dcc.Graph(id='graph'),
-
-                        ])
-                ),
-            ]
+                ])
+            ), className="col-6"
         ),
+        dbc.Col([
+            dbc.Form([inline_checklist]),
+            dbc.Card([
+                dbc.CardHeader("Profile"),
+                dbc.CardBody(
+                    html.Div([dcc.Graph(id='graph_profile'),
+                        ])
+                )
+            ]),
+            dbc.Card([
+                dbc.CardHeader("Plan"),
+                dbc.CardBody(
+                    html.Div([
+                                dcc.Graph(id='graph_plan'),
+                        ])
+                )
+            ]),
+            dbc.Card([
+                dbc.CardHeader("Visualization"),
+                dbc.CardBody(
+                    html.Div([
+                                dcc.Graph(id='graph'),
+                        ])
+                )
+            ] )
+        ], className="col-6"),
+    ]),
 
+])
+
+info_tab_layout = html.Div([
+   html.H1("Blah")
+
+
+
+])
+
+app.layout = dbc.Tabs([
+    dbc.Tab(info_tab_layout, label="Info"),
+    dbc.Tab(gen_tab_layout, label="Generate"), 
 ])
 
 @app.callback([Output('output-state', 'children'), Output("graph", "figure"),
