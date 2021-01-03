@@ -11,7 +11,7 @@ class Config():
 
         self.CONFIG_OPTIONS = {
                 'Project':{
-                                "Units":{"type":str,"required":False,"default":"inches"},
+                                "Units":{"type":str,"required":False,"default":"inches", "domain":["millimeters","inches"]},
                                 "Name":{"type":str,"required":False,"default":""},
                 },
                 'RootChord':{   "Profile":{"type":str,"required":True},
@@ -28,7 +28,7 @@ class Config():
                 },
                 'Panel':{
                                 "RootChordOffset":{"type":float,"required":True},
-                                "TipChordSide":{"type":str, "required":False, "default":"right"},
+                                "TipChordSide":{"type":str, "required":False, "default":"right", "domain":["left","right"]},
                                 "Width":{"type":float,"required":True},
                                 "Bottom":{"type":float,"required":False, "default":0.0},
                                 "Height":{"type":float,"required":True},
@@ -41,7 +41,7 @@ class Config():
                                 "HorizontalOffset":{"type":float,"required":False, "default": 0},                    
                                 "VerticalOffsetRoot":{"type":float,"required":False, "default": 25},                    
                                 "VerticalOffsetTip":{"type":float,"required":False, "default": None},                    
-                                "VerticalAlignProfiles":{"type":str,"required":False, "default": "default"}, 
+                                "VerticalAlignProfiles":{"type":str,"required":False, "default": "default", "domain":["default","bottom"]}, 
                                 "StockLeadingEdge":{"type":float,"required":False,"default":0},
                                 "StockTrailingEdge":{"type":float,"required":False,"default":0},
                                 "SheetingTop":{"type":float,"required":False,"default":0},

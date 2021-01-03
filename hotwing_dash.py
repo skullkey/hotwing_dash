@@ -1,5 +1,6 @@
-import dash_editor_components
+#import dash_editor_components
 import dash
+import dash_ace
 import dash_html_components as html
 import dash_core_components as dcc
 from dash.dependencies import Input, Output, State
@@ -9,15 +10,28 @@ import gcode_gen
 import config_options
 import plotting
 
+import flask
+from flask import jsonify
+from flask_cors import CORS
+from flask import request
+
+server = flask.Flask(__name__)
+CORS(server)
+
+
+
 cfg = config_options.Config("example.cfg")
 with open("example.cfg") as f:
     lines = f.readlines()
 
 
 # Build App
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP] )
+app = dash.Dash(__name__,
+                server=server,
+                routes_pathname_prefix='/hw/',
+                external_stylesheets=[dbc.themes.BOOTSTRAP]
+                )
 
-["initial_move","profile","done_profile", "front_stock", "tail_stock"]
 inline_checklist = dbc.FormGroup(
                 [
                     dbc.Checklist(
@@ -46,8 +60,23 @@ gen_tab_layout =  html.Div([
             dbc.Card(
                 dbc.CardBody([
                     dbc.Button(id='submit-button-state', n_clicks=0, children='Generate', color="primary", block=True),
-                    dash_editor_components.PythonEditor(
-                        id='input', value = "".join(lines)
+                    #dash_editor_components.PythonEditor(
+                    #    id='input', value = "".join(lines)
+                    #),
+                    dash_ace.DashAceEditor(
+                        id='input',
+                        value="".join(lines),
+                        theme='tomorrow',
+                        mode='norm',
+                        tabSize=2,
+                        enableBasicAutocompletion=True,
+                        enableLiveAutocompletion=False,
+                        syntaxFolds = "\\[)(.*?)(",
+                        autocompleter='/autocompleter?prefix=',
+                        placeholder='Python code ...',
+                        wrapEnabled=True,
+                        prefixLine=True,
+                        style={"width":"100%"}
                     )
                 ])
             ), className="col-6"
@@ -84,18 +113,33 @@ gen_tab_layout =  html.Div([
 
 info_tab_layout = html.Div([
    html.H1("Blah")
+])
 
-
+gcode_tab_layout = html.Div([
+    dash_ace.DashAceEditor(
+                        id='gcode',
+                        value="",
+                        theme='github',
+                        mode='text',
+                        tabSize=2,
+                        enableBasicAutocompletion=False,
+                        enableLiveAutocompletion=False,
+                        placeholder='No gcode ...',
+                        wrapEnabled=True,
+                        style={"width":"100%"}
+                    )
 
 ])
 
 app.layout = dbc.Tabs([
     dbc.Tab(info_tab_layout, label="Info"),
-    dbc.Tab(gen_tab_layout, label="Generate"), 
+    dbc.Tab(gen_tab_layout, label="Generate"),
+    dbc.Tab(gcode_tab_layout, label="GCode"),
+
 ])
 
 @app.callback([Output('output-state', 'children'), Output("graph", "figure"),
-              Output("graph_profile", "figure"), Output("graph_plan", "figure"),],
+              Output("graph_profile", "figure"), Output("graph_plan", "figure"), Output('gcode','value')],
               [Input('submit-button-state', 'n_clicks'),Input("checklist-input", "value")], 
               State('input', 'value')
               
@@ -109,6 +153,7 @@ def update_output(n_clicks, draw_selection, config_input):
 
         gc_gen = gcode_gen.GcodeGen(cfg)
         gc = gc_gen.gen_gcode()
+        gcode_output = gc.code_as_str
         
         pgc = plotting.ParsedGcode.fromgcode(gc)
 
@@ -207,9 +252,33 @@ def update_output(n_clicks, draw_selection, config_input):
         fig = {}
         fig_p = {}
         fig_plan = {}
+        gcode_output = "Error: %s" % str(e)
     
-    return msg, fig, fig_p, fig_plan
+    return msg, fig, fig_p, fig_plan, gcode_output
+
+@server.route('/autocompleter', methods=['GET'])
+def autocompleter():
+    prefix = request.args.get("prefix")
+    print(prefix)
+    autocomplete = []
+
+    if '=' in prefix:
+        parameter = prefix.split("=")[0].strip()
+        parameter_lookup = prefix.split("=")[-1]
+        for heading, section in cfg.CONFIG_OPTIONS.items():
+            param_confg = section.get(parameter, {}) 
+            domain = param_confg.get("domain",[])
+            for d in domain:
+                autocomplete.append({"name": d, "value": d, "score": 100, "meta": "Parameter"})
+
+    else:
+        for heading, section in cfg.CONFIG_OPTIONS.items():
+            for keyword, meta in section.items():
+                if keyword.lower().startswith(prefix.lower()):
+                    autocomplete.append({"name": keyword, "value": keyword, "score": 100, "meta": "Config"})
+    return jsonify(autocomplete)
+
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8889)
+    app.run_server(debug=True, port=8050)
