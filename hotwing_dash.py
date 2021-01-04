@@ -103,7 +103,7 @@ gen_layout =  html.Div([
     html.Div(id='output-state'),
     dbc.Button(id='close-button-state', n_clicks=0, children='Close', color="danger", className="mr-2"),                   
     dbc.Button(id='save-button-state', n_clicks=0, children='Download', color="success", className="mr-2"),
-    dbc.Button(id='submit-button-state', n_clicks=0, children='Update', color="primary", className="mr-2"),
+    dbc.Button(id='submit-button-state', n_clicks=0, children='Draw', color="primary", className="mr-2"),
     Download(id="download"),
 
     dbc.Row([
@@ -155,6 +155,13 @@ gen_layout =  html.Div([
                 dbc.CardBody(
                     html.Div([
                                 dcc.Graph(id='graph'),
+                                dcc.Slider(
+                                    id='point-slider',
+                                    min=1,
+                                    max=100,
+                                    step=1,
+                                    value=100,
+                                ),
                         ])
                 )
             ], id='3d-card',  style={"display":"none"} )
@@ -170,7 +177,15 @@ info_tab_layout = html.Div([
 ])
 
 gcode_tab_layout = html.Div([
-    dash_ace.DashAceEditor(
+    dbc.Button(id='save-gcode-button', n_clicks=0, children='Download', color="success", className="mr-2"),
+    Download(id="download-gcode"),
+    dbc.Row([
+        dbc.Col(
+            dbc.Card(
+                dbc.CardBody([
+
+
+                    dash_ace.DashAceEditor(
                         id='gcode',
                         value="",
                         theme='github',
@@ -182,6 +197,10 @@ gcode_tab_layout = html.Div([
                         wrapEnabled=True,
                         style={"width":"100%"}
                     )
+                ])
+            )
+        )
+    ])
 
 ])
 
@@ -206,6 +225,20 @@ def save_config(n_nlicks, config_input):
     return dict(content=config_input, filename=filename)
 
 
+@app.callback(Output("download-gcode", "data"), 
+              [Input("save-gcode-button", "n_clicks")], 
+              State('gcode', 'value'))
+def save_config(n_nlicks, gcode_input):
+
+    pn = cfg.get_config("Project","Name")
+    filename = "%s.gcode" % removeDisallowedFilenameChars(pn)
+
+    
+    return dict(content=gcode_input, filename=filename)
+
+
+
+
 @app.callback([Output("file_open_div","style"), 
                 Output("gen_div","style"), 
                 Output('input', 'value')], 
@@ -214,35 +247,42 @@ def save_config(n_nlicks, config_input):
                 Input('upload-data',"contents")])
 def update_main_content(n_clicks_new, n_clicks_close, contents):
     ctx = dash.callback_context
+
+    hide = {'display':'none'}
+    show = {'display':''}
     
     if not ctx.triggered:
         button_id = None
-        return {'display':''},{'display':'none'},""
+        return show,hide,""
     else:
         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
         if button_id == "new-config":
-            return {'display':'none'},{'display':''},"template"
+            return hide, show, "template"
         elif button_id == "close-button-state":
-            return {'display':''},{'display':'none'},""
+            return show, hide,""
         elif button_id == "upload-data":
             content_type, content_string = contents.split(',')
             decoded = base64.b64decode(content_string).decode()
-            print(decoded)
-            return  {'display':'none'},{'display':''}, decoded
+            return  hide, show, decoded
 
-    return {'display':''},{'display':'none'},""
-
+    return show, hide, ""
 
 
 
 
-@app.callback([Output('output-state', 'children'), Output("graph", "figure"),
-              Output("graph_profile", "figure"), Output("graph_plan", "figure"), Output('gcode','value')],
-              [Input('submit-button-state', 'n_clicks'),Input("checklist-input", "value")], 
+
+@app.callback([Output('output-state', 'children'), 
+                Output("graph", "figure"),
+                Output("graph_profile", "figure"), 
+                Output("graph_plan", "figure"), 
+                Output('gcode','value')],
+              [Input('submit-button-state', 'n_clicks'), 
+               Input("checklist-input", "value"),
+               Input("point-slider","value")], 
               State('input', 'value')
               
               )
-def update_output(n_clicks, draw_selection, config_input):
+def update_output(n_clicks, draw_selection, point_slider, config_input):
     #return {}, {}, {}, {}, {}
     try:
         cfg.config.clear()
@@ -274,8 +314,11 @@ def update_output(n_clicks, draw_selection, config_input):
         pgc_filtered = pgc.filter_gcode(draw_selection)
 
         if "3d" in draw_selection:
+
+            point_perc = float(point_slider) / 100.0
+            num_of_points = int(point_perc * len(pgc_filtered))
         
-            fig, stats = gplt.plot_gcode(pgc_filtered, draw_cutting_path=True,draw_foam_block=True, num_of_points=-1)
+            fig, stats = gplt.plot_gcode(pgc_filtered, draw_cutting_path=True,draw_foam_block=True, num_of_points=num_of_points)
             camera = dict(
                 eye=dict(x=-2.5, y=-2.5, z=2.5)
             )
