@@ -5,6 +5,7 @@ import dash_html_components as html
 import dash_core_components as dcc
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
+from dash_extensions import Download
 
 import gcode_gen
 import config_options
@@ -19,6 +20,16 @@ server = flask.Flask(__name__)
 CORS(server)
 
 
+import unicodedata
+import string
+import base64
+
+validFilenameChars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+
+def removeDisallowedFilenameChars(filename):
+    cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore').decode()
+    return ''.join(c for c in cleanedFilename if c in validFilenameChars)
+
 
 cfg = config_options.Config("example.cfg")
 with open("example.cfg") as f:
@@ -29,7 +40,9 @@ with open("example.cfg") as f:
 app = dash.Dash(__name__,
                 server=server,
                 routes_pathname_prefix='/hw/',
-                external_stylesheets=[dbc.themes.BOOTSTRAP]
+                external_stylesheets=[dbc.themes.BOOTSTRAP],
+                suppress_callback_exceptions=True,
+                prevent_initial_callbacks=True
                 )
 
 inline_checklist = dbc.FormGroup(
@@ -51,18 +64,53 @@ inline_checklist = dbc.FormGroup(
             )
 
 
-gen_tab_layout =  html.Div([
-    
-    html.Div(id='output-state'),
-   
+
+main_tab_layout = html.Div(id = "main-content")
+
+file_open_layout = html.Div([
     dbc.Row([
         dbc.Col(
             dbc.Card(
                 dbc.CardBody([
-                    dcc.Upload(dbc.Button(id='load-button-state', n_clicks=0, children='Load', color="secondary"), className="mr-2"),
-                    dbc.Button(id='save-button-state', n_clicks=0, children='Save', color="success", className="mr-2"),
+                    html.Center(dbc.Button("New", id="new-config", className="col-2", style={'horizontalAlign':'center'})),
+                    html.Br(),
+                    dcc.Upload(id='upload-data',
+                        children=html.Div([
+                            'Drag and Drop or ',
+                            html.A('Select Files')
+                        ]),
+                        style={
+                            'width': '100%',
+                            'height': '60px',
+                            'lineHeight': '60px',
+                            'borderWidth': '1px',
+                            'borderStyle': 'dashed',
+                            'borderRadius': '5px',
+                            'textAlign': 'center',
+                            'margin': '10px'
+                        },)
+                ])
+            )
+        )
+    ])
+], id='file_open_div')
 
-                    dbc.Button(id='submit-button-state', n_clicks=0, children='Generate', color="primary", className="mr-2"),
+
+
+gen_layout =  html.Div([
+    
+    html.Div(id='output-state'),
+    dbc.Button(id='close-button-state', n_clicks=0, children='Close', color="danger", className="mr-2"),                   
+    dbc.Button(id='save-button-state', n_clicks=0, children='Download', color="success", className="mr-2"),
+    dbc.Button(id='submit-button-state', n_clicks=0, children='Update', color="primary", className="mr-2"),
+    Download(id="download"),
+
+    dbc.Row([
+        dbc.Col(
+            dbc.Card(
+                dbc.CardBody([
+
+
                     #dash_editor_components.PythonEditor(
                     #    id='input', value = "".join(lines)
                     #),
@@ -112,7 +160,9 @@ gen_tab_layout =  html.Div([
         ], className="col-6"),
     ]),
 
-])
+], id="gen_div", style={"display":"none"})
+
+main_tab_layout.children = [file_open_layout, gen_layout]
 
 info_tab_layout = html.Div([
    html.H1("Blah")
@@ -134,12 +184,56 @@ gcode_tab_layout = html.Div([
 
 ])
 
+
+
 app.layout = dbc.Tabs([
     dbc.Tab(info_tab_layout, label="Info"),
-    dbc.Tab(gen_tab_layout, label="Generate"),
+    dbc.Tab(main_tab_layout, label="Generate"),
     dbc.Tab(gcode_tab_layout, label="GCode"),
 
 ])
+
+
+@app.callback(Output("download", "data"), [Input("save-button-state", "n_clicks")], State('input', 'value'))
+def save_config(n_nlicks, config_input):
+    cfg.config.clear()
+    cfg.config.read_string(config_input)
+    pn = cfg.get_config("Project","Name")
+    filename = removeDisallowedFilenameChars(pn)
+
+    
+    return dict(content=config_input, filename=filename)
+
+
+@app.callback([Output("file_open_div","style"), 
+                Output("gen_div","style"), 
+                Output('input', 'value')], 
+                [Input("new-config","n_clicks"), 
+                Input("close-button-state","n_clicks"),
+                Input('upload-data',"contents")])
+def update_main_content(n_clicks_new, n_clicks_close, contents):
+    ctx = dash.callback_context
+    
+    if not ctx.triggered:
+        button_id = None
+        return {'display':''},{'display':'none'},""
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        if button_id == "new-config":
+            return {'display':'none'},{'display':''},"template"
+        elif button_id == "close-button-state":
+            return {'display':''},{'display':'none'},""
+        elif button_id == "upload-data":
+            content_type, content_string = contents.split(',')
+            decoded = base64.b64decode(content_string).decode()
+            print(decoded)
+            return  {'display':'none'},{'display':''}, decoded
+
+    return {'display':''},{'display':'none'},""
+
+
+
+
 
 @app.callback([Output('output-state', 'children'), Output("graph", "figure"),
               Output("graph_profile", "figure"), Output("graph_plan", "figure"), Output('gcode','value')],
@@ -148,6 +242,7 @@ app.layout = dbc.Tabs([
               
               )
 def update_output(n_clicks, draw_selection, config_input):
+    #return {}, {}, {}, {}, {}
     try:
         cfg.config.clear()
         cfg.config.read_string(config_input)
@@ -258,6 +353,9 @@ def update_output(n_clicks, draw_selection, config_input):
         gcode_output = "Error: %s" % str(e)
     
     return msg, fig, fig_p, fig_plan, gcode_output
+
+
+
 
 @server.route('/autocompleter', methods=['GET'])
 def autocompleter():
