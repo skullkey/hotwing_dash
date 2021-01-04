@@ -59,7 +59,10 @@ gen_tab_layout =  html.Div([
         dbc.Col(
             dbc.Card(
                 dbc.CardBody([
-                    dbc.Button(id='submit-button-state', n_clicks=0, children='Generate', color="primary", block=True),
+                    dcc.Upload(dbc.Button(id='load-button-state', n_clicks=0, children='Load', color="secondary"), className="mr-2"),
+                    dbc.Button(id='save-button-state', n_clicks=0, children='Save', color="success", className="mr-2"),
+
+                    dbc.Button(id='submit-button-state', n_clicks=0, children='Generate', color="primary", className="mr-2"),
                     #dash_editor_components.PythonEditor(
                     #    id='input', value = "".join(lines)
                     #),
