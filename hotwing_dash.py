@@ -54,6 +54,7 @@ inline_checklist = dbc.FormGroup(
                             {"label": "Post Profile", "value": "done_profile"},
                             {"label": "Front Stock", "value": "front_stock"},
                             {"label": "Tail Stock", "value": "tail_stock"},
+                            {"label": "3D", "value": "3d"},
 
                         ],
                         value=["profile"],
@@ -156,7 +157,7 @@ gen_layout =  html.Div([
                                 dcc.Graph(id='graph'),
                         ])
                 )
-            ] )
+            ], id='3d-card',  style={"display":"none"} )
         ], className="col-6"),
     ]),
 
@@ -271,17 +272,19 @@ def update_output(n_clicks, draw_selection, config_input):
                                     panel_bottom, panel_height, 
                                     panel_inset, panel_depth)
         pgc_filtered = pgc.filter_gcode(draw_selection)
+
+        if "3d" in draw_selection:
         
-        fig, stats = gplt.plot_gcode(pgc_filtered, draw_cutting_path=True,draw_foam_block=True, num_of_points=-1)
+            fig, stats = gplt.plot_gcode(pgc_filtered, draw_cutting_path=True,draw_foam_block=True, num_of_points=-1)
+            camera = dict(
+                eye=dict(x=-2.5, y=-2.5, z=2.5)
+            )
 
-
-        camera = dict(
-            eye=dict(x=-2.5, y=-2.5, z=2.5)
-        )
-
-        fig.update_layout(scene_camera=camera, legend=dict(
-            orientation="h",)
-        )
+            fig.update_layout(scene_camera=camera, legend=dict(
+                orientation="h",)
+            )
+        else:
+            fig = {}
         
         
         fig_p, stats = gplt.plot_gcode_2dprofile(pgc_filtered, draw_cutting_path=True,
@@ -355,7 +358,12 @@ def update_output(n_clicks, draw_selection, config_input):
     return msg, fig, fig_p, fig_plan, gcode_output
 
 
-
+@app.callback( Output("3d-card", "style"), Input("graph", "figure"))
+def show_or_hide_3d(fig):
+    if fig == {}:
+        return {"display":"none"}
+    else:
+        return {"display":"block"}
 
 @server.route('/autocompleter', methods=['GET'])
 def autocompleter():
