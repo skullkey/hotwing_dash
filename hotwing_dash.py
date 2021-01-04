@@ -31,10 +31,10 @@ def removeDisallowedFilenameChars(filename):
     return ''.join(c for c in cleanedFilename if c in validFilenameChars)
 
 
-cfg = config_options.Config("example.cfg")
-with open("example.cfg") as f:
-    lines = f.readlines()
+cfg = config_options.Config("")
 
+with open("example.cfg") as f:
+    config_template = f.read()
 
 # Build App
 app = dash.Dash(__name__,
@@ -105,6 +105,10 @@ gen_layout =  html.Div([
     dbc.Button(id='save-button-state', n_clicks=0, children='Download', color="success", className="mr-2"),
     dbc.Button(id='submit-button-state', n_clicks=0, children='Draw', color="primary", className="mr-2"),
     Download(id="download"),
+    dcc.ConfirmDialog(
+        id='confirm',
+        message='Are you sure you want to close the config file?',
+    ),
 
     dbc.Row([
         dbc.Col(
@@ -117,7 +121,7 @@ gen_layout =  html.Div([
                     #),
                     dash_ace.DashAceEditor(
                         id='input',
-                        value="".join(lines),
+                        value="",
                         theme='tomorrow',
                         mode='norm',
                         tabSize=2,
@@ -172,8 +176,11 @@ gen_layout =  html.Div([
 
 main_tab_layout.children = [file_open_layout, gen_layout]
 
+with open("info.md") as f:
+    info_md = f.read()
+
 info_tab_layout = html.Div([
-   html.H1("Blah")
+   dcc.Markdown(info_md)
 ])
 
 gcode_tab_layout = html.Div([
@@ -243,7 +250,7 @@ def save_config(n_nlicks, gcode_input):
                 Output("gen_div","style"), 
                 Output('input', 'value')], 
                 [Input("new-config","n_clicks"), 
-                Input("close-button-state","n_clicks"),
+                Input("confirm","submit_n_clicks"),
                 Input('upload-data',"contents")])
 def update_main_content(n_clicks_new, n_clicks_close, contents):
     ctx = dash.callback_context
@@ -257,9 +264,9 @@ def update_main_content(n_clicks_new, n_clicks_close, contents):
     else:
         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
         if button_id == "new-config":
-            return hide, show, "template"
+            return hide, show, config_template
         elif button_id == "close-button-state":
-            return show, hide,""
+            return show, hide, ""
         elif button_id == "upload-data":
             content_type, content_string = contents.split(',')
             decoded = base64.b64decode(content_string).decode()
@@ -268,6 +275,10 @@ def update_main_content(n_clicks_new, n_clicks_close, contents):
     return show, hide, ""
 
 
+@app.callback(Output('confirm', 'displayed'),
+              Input('close-button-state', 'n_clicks'))
+def display_confirm(value):
+    return True
 
 
 
@@ -390,7 +401,7 @@ def update_output(n_clicks, draw_selection, point_slider, config_input):
         fig_plan.update_layout(legend=dict(
             orientation="h"
         ))
-        msg = {} #dbc.Alert("All Good", color="success")
+        msg = {} 
     except Exception as e:
         msg = msg = dbc.Alert(str(e), color="danger")
         fig = {}
