@@ -24,6 +24,8 @@ import unicodedata
 import string
 import base64
 
+import json
+
 validFilenameChars = "-_.() %s%s" % (string.ascii_letters, string.digits)
 
 def removeDisallowedFilenameChars(filename):
@@ -42,7 +44,8 @@ app = dash.Dash(__name__,
                 routes_pathname_prefix='/hw/',
                 external_stylesheets=[dbc.themes.BOOTSTRAP],
                 suppress_callback_exceptions=True,
-                prevent_initial_callbacks=True
+                prevent_initial_callbacks=True,
+                assets_folder='static'
                 )
 
 inline_checklist = dbc.FormGroup(
@@ -51,10 +54,12 @@ inline_checklist = dbc.FormGroup(
                         options=[
                             {"label": "Initial Move", "value": "initial_move"},
                             {"label": "Profile", "value": "profile"},
-                            {"label": "Post Profile", "value": "done_profile"},
+                            {"label": "Pre-Stock", "value": "done_profile"},
                             {"label": "Front Stock", "value": "front_stock"},
                             {"label": "Tail Stock", "value": "tail_stock"},
                             {"label": "3D", "value": "3d"},
+                            {"label": "Full Screen", "value": "full_screen"},
+
 
                         ],
                         value=["profile"],
@@ -135,22 +140,22 @@ gen_layout =  html.Div([
                         style={"width":"100%"}
                     )
                 ])
-            ), className="col-6"
+            ), className="col-5", id='editor-card',
         ),
         dbc.Col([
             dbc.Form([inline_checklist]),
             dbc.Card([
-                dbc.CardHeader("Profile"),
+                dbc.CardHeader("Profile",id="profile-header"),
                 dbc.CardBody(
-                    html.Div([dcc.Graph(id='graph_profile'),
+                    html.Div([dcc.Graph(id='graph_profile', config={'displayModeBar': False}),
                         ])
                 )
             ]),
             dbc.Card([
-                dbc.CardHeader("Plan"),
+                dbc.CardHeader("Plan", id="plan-header"),
                 dbc.CardBody(
                     html.Div([
-                                dcc.Graph(id='graph_plan'),
+                                dcc.Graph(id='graph_plan', config={'displayModeBar': False}),
                         ])
                 )
             ]),
@@ -158,7 +163,7 @@ gen_layout =  html.Div([
                 dbc.CardHeader("Visualization"),
                 dbc.CardBody(
                     html.Div([
-                                dcc.Graph(id='graph'),
+                                dcc.Graph(id='graph', config={'displayModeBar': False}),
                                 dcc.Slider(
                                     id='point-slider',
                                     min=1,
@@ -168,8 +173,15 @@ gen_layout =  html.Div([
                                 ),
                         ])
                 )
-            ], id='3d-card',  style={"display":"none"} )
-        ], className="col-6"),
+            ], id='3d-card',  style={"display":"none"} ),
+            dbc.Card([
+                dbc.CardHeader("Stats"),
+                dbc.CardBody([
+                    html.Div( id="stats-div", style={"display":"none"}),
+                    html.Div(id="stats-output-div")
+                ])
+            ])
+        ], className="col-7",id="chart-card"),
     ]),
 
 ], id="gen_div", style={"display":"none"})
@@ -180,7 +192,15 @@ with open("info.md") as f:
     info_md = f.read()
 
 info_tab_layout = html.Div([
-   dcc.Markdown(info_md)
+    dbc.Row([
+        dbc.Col(
+            dbc.Card(
+                dbc.CardBody([
+                    dcc.Markdown(info_md)
+                ])
+            )
+        )
+    ])
 ])
 
 gcode_tab_layout = html.Div([
@@ -282,19 +302,24 @@ def display_confirm(value):
 
 
 
-@app.callback([Output('output-state', 'children'), 
-                Output("graph", "figure"),
-                Output("graph_profile", "figure"), 
-                Output("graph_plan", "figure"), 
-                Output('gcode','value')],
-              [Input('submit-button-state', 'n_clicks'), 
-               Input("checklist-input", "value"),
-               Input("point-slider","value")], 
-              State('input', 'value')
-              
-              )
+#@app.callback([Output('output-state', 'children'), 
+#                Output("graph", "figure"),
+#                Output("graph_profile", "figure"), 
+#                Output("graph_plan", "figure"), 
+#                Output('gcode','value'), 
+#                Output('editor-card', 'style'),
+#                Output('stats-div','children')
+#                ],
+#              [Input('submit-button-state', 'n_clicks'), 
+#               Input("checklist-input", "value"),
+#               Input("point-slider","value")], 
+#              State('input', 'value')
+#              
+#              )
 def update_output(n_clicks, draw_selection, point_slider, config_input):
     #return {}, {}, {}, {}, {}
+    EDITOR_SHOW = {'display':''}
+    EDITOR_HIDE = {'display':'none'}
     try:
         cfg.config.clear()
         cfg.config.read_string(config_input)
@@ -324,12 +349,18 @@ def update_output(n_clicks, draw_selection, point_slider, config_input):
                                     panel_inset, panel_depth)
         pgc_filtered = pgc.filter_gcode(draw_selection)
 
+
+        fig, stats_3d = gplt.plot_gcode(pgc_filtered, draw_cutting_path=True,draw_foam_block=True, num_of_points=-1)
+        stats_output = json.dumps(stats_3d)
         if "3d" in draw_selection:
 
             point_perc = float(point_slider) / 100.0
             num_of_points = int(point_perc * len(pgc_filtered))
-        
-            fig, stats = gplt.plot_gcode(pgc_filtered, draw_cutting_path=True,draw_foam_block=True, num_of_points=num_of_points)
+
+            if point_perc != 1:
+                fig, _ = gplt.plot_gcode(pgc_filtered, draw_cutting_path=True,draw_foam_block=True, num_of_points=num_of_points)
+
+
             camera = dict(
                 eye=dict(x=-2.5, y=-2.5, z=2.5)
             )
@@ -339,6 +370,11 @@ def update_output(n_clicks, draw_selection, point_slider, config_input):
             )
         else:
             fig = {}
+
+        if "full_screen" in draw_selection:
+            editor_visi3le = EDITOR_HIDE
+        else:
+            editor_visible = EDITOR_SHOW
         
         
         fig_p, stats = gplt.plot_gcode_2dprofile(pgc_filtered, draw_cutting_path=True,
@@ -384,8 +420,8 @@ def update_output(n_clicks, draw_selection, point_slider, config_input):
         )
 
         fig_plan.update_layout(
-            autosize=False,
-            height = 300,
+            autosize=True,
+            #height = 300,
             plot_bgcolor="#FFF",
             xaxis=dict(
                 linecolor="#BCCCDC",  # Sets color of X-axis line
@@ -403,14 +439,23 @@ def update_output(n_clicks, draw_selection, point_slider, config_input):
         ))
         msg = {} 
     except Exception as e:
-        msg = msg = dbc.Alert(str(e), color="danger")
+        msg = dbc.Alert(str(e), color="danger")
         fig = {}
         fig_p = {}
         fig_plan = {}
         gcode_output = "Error: %s" % str(e)
+        editor_visible = EDITOR_SHOW
+        stats_output = ""
     
-    return msg, fig, fig_p, fig_plan, gcode_output
+    return msg, fig, fig_p, fig_plan, gcode_output, editor_visible, stats_output
 
+@app.callback(Output("chart-card","className"),
+               Input("editor-card","style"))
+def update_card_classnames(style):
+    if style['display'] == 'none':
+        return "col-12"
+    else:
+        return "col-7"
 
 @app.callback( Output("3d-card", "style"), Input("graph", "figure"))
 def show_or_hide_3d(fig):
@@ -418,6 +463,30 @@ def show_or_hide_3d(fig):
         return {"display":"none"}
     else:
         return {"display":"block"}
+
+
+@app.callback([Output("profile-header","style"), 
+                Output("plan-header","style"),
+                Output("stats-output-div","children")],
+              Input("stats-div","children"))
+def show_card_head_warning(children):
+    stats = json.loads(children)
+    output = []
+    
+    output.append('Wing Out of Bounds: %d ' % stats['wing']['out_of_bounds'])
+    if stats['wing']['out_of_bounds'] > 0:
+        profile_header = {"background-color":"#dc3545","color":"white"}
+    else:
+        profile_header = {}
+
+    if stats['machine']['out_of_bounds'] > 0:
+        plan_header = {"background-color":"#dc3545","color":"white"}
+    else:
+        plan_header = {}        
+
+    return profile_header,\
+           plan_header, \
+           output
 
 @server.route('/autocompleter', methods=['GET'])
 def autocompleter():
@@ -432,7 +501,7 @@ def autocompleter():
             param_confg = section.get(parameter, {}) 
             domain = param_confg.get("domain",[])
             for d in domain:
-                autocomplete.append({"name": d, "value": d, "score": 100, "meta": "Parameter"})
+                autocomplete.append({"name": d, "value": d, "score": 1000, "meta": "Parameter"})
 
     else:
         for heading, section in cfg.CONFIG_OPTIONS.items():
@@ -444,4 +513,4 @@ def autocompleter():
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8050)
+    app.run_server(debug=True, port=8050, host="0.0.0.0")

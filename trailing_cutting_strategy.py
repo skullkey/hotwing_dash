@@ -25,8 +25,11 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
         profile2 = Profile.offset_around_profiles(
             profile2, m.kerf[1], m.kerf[1])
 
+
+        # Get profile_max - will use it to reverse the profile
         profile_max = max(profile1.right_midpoint.x, profile2.right_midpoint.x)
 
+        # auto aligning of profiles
         if vertical_align_profiles == "default":
             if vertical_offset_right is None :
                 vertical_offset_right = vertical_offset_left
@@ -41,12 +44,18 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
                 vertical_offset_left = vertical_offset_right + right_profile_bottom - left_profile_bottom
 
 
+        # coordinates start with leading edge in profile files
+        # we want it to start with trailing edge
+        # so we reverse it
+        profile1.top.coordinates = [Coordinate(profile_max - c.x + horizontal_offset + te_offset, \
+                                    c.y + vertical_offset_left) for c in reversed(profile1.top.coordinates)]
+        profile1.bottom.coordinates = [Coordinate(profile_max - c.x + horizontal_offset + te_offset, \
+                                    c.y + vertical_offset_left) for c in reversed(profile1.bottom.coordinates)]
 
-        profile1.top.coordinates = [Coordinate(profile_max - c.x + horizontal_offset, c.y + vertical_offset_left) for c in reversed(profile1.top.coordinates)]
-        profile1.bottom.coordinates = [Coordinate(profile_max - c.x +horizontal_offset, c.y + vertical_offset_left) for c in reversed(profile1.bottom.coordinates)]
-
-        profile2.top.coordinates = [Coordinate(profile_max - c.x + horizontal_offset, c.y + vertical_offset_right) for c in reversed(profile2.top.coordinates)]
-        profile2.bottom.coordinates = [Coordinate(profile_max - c.x + horizontal_offset, c.y + vertical_offset_right) for c in reversed(profile2.bottom.coordinates)]
+        profile2.top.coordinates = [Coordinate(profile_max - c.x + horizontal_offset + te_offset, \
+                                    c.y + vertical_offset_right) for c in reversed(profile2.top.coordinates)]
+        profile2.bottom.coordinates = [Coordinate(profile_max - c.x + horizontal_offset + te_offset, \
+                                    c.y + vertical_offset_right) for c in reversed(profile2.bottom.coordinates)]
 
         # Trim the overlap
         # profile1 = Profile.trim_overlap(profile1)
@@ -55,10 +64,10 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
         # MOVE TO SAFE HEIGHT
         self._move_to_safe_height()
 
-        # calc le offset pos
+        # calc te offset pos
         pos = m.calculate_move(
-                profile1.left_midpoint - Coordinate(le_offset, 0),
-                profile2.left_midpoint- Coordinate(le_offset, 0))
+                profile1.left_midpoint - Coordinate(te_offset, 0),
+                profile2.left_midpoint- Coordinate(te_offset, 0))
 
         ## MOVE FAST HORIZONTALLY TO SPOT ABOVE LE OFFSET
         m.gc.fast_move( {'x':pos['x'],'u':pos['u']}, ['initial_move'] )
@@ -66,18 +75,18 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
         ## MOVE DOWN TO JUST ABOVE FOAM
         m.gc.fast_move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize", 'initial_move'] )
 
-        # CUT DOWN TO LEADING EDGE OFFSET
+        # CUT DOWN TO TRAILING EDGE OFFSET
         m.gc.move(pos, ['initial_move'])
         self.machine.gc.dwell(dwell_time)
 
-        # CUT INWARDS TO LEADING EDGE
+        # CUT INWARDS TO TRAILING EDGE
         m.gc.move(m.calculate_move(profile1.left_midpoint, profile2.left_midpoint), ['initial_move'])
         self.machine.gc.dwell(dwell_time)
 
         # CUT THE TOP PROFILE
         self._cut_top_profile(profile1, profile2, dwell_time, ['profile'])
 
-        # CUT TO TRAILING EDGE AT MIDDLE OF PROFILE
+        # CUT TO LEADING EDGE AT MIDDLE OF PROFILE
         m.gc.move(
             m.calculate_move(
                 profile1.right_midpoint,
@@ -85,7 +94,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
         , ['profile'])
         self.machine.gc.dwell(dwell_time)
 
-        # CUT TO TRAILING EDGE OFFSET
+        # CUT TO LEADING EDGE OFFSET
         m.gc.move(
             m.calculate_move(
                 profile1.right_midpoint + Coordinate(te_offset,0),
@@ -94,7 +103,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
         )
         self.machine.gc.dwell(dwell_time)
 
-        # CUT TO TRAILING EDGE AT MIDDLE OF PROFILE
+        # CUT TO LEADING EDGE AT MIDDLE OF PROFILE
         m.gc.move(
             m.calculate_move(
                 profile1.right_midpoint,
@@ -105,10 +114,10 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
         # CUT BOTTOM PROFILE
         self._cut_bottom_profile(profile1, profile2, dwell_time, ['profile'])
 
-        # CUT TO LEADING EDGE
+        # CUT TO TRAILING EDGE
         m.gc.move(m.calculate_move(profile1.left_midpoint, profile2.left_midpoint), ['profile'])
 
-        # CUT TO LEADING EDGE OFFSET
+        # CUT TO TRAILING EDGE OFFSET
         m.gc.move(
             m.calculate_move(
                 profile1.left_midpoint - Coordinate(le_offset,0),

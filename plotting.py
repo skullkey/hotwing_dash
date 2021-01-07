@@ -59,6 +59,24 @@ class ParsedGcode:
 
         return ParsedGcode(X_f, Y_f, U_f, V_f, TAG_f, KIND_f)
 
+    def _round(self, a):
+        return np.round(np.array(a, 'float32'),2)
+
+    @property
+    def round_X(self):
+        return self._round(self.X)
+
+    @property
+    def round_Y(self):
+        return self._round(self.Y)
+
+    @property
+    def round_U(self):
+        return self._round(self.U)
+
+    @property
+    def round_V(self):
+        return self._round(self.V)
 
 class GcodeBox():
     def __init__(self, box_left, box_width, box_bottom, box_height, box_inset, box_depth):
@@ -151,7 +169,7 @@ class GcodePlotter():
                     | (z< gbox.bottom) | (z > gbox.height + gbox.bottom)
         intensity = np.array(intensity,float) 
             
-        return {'x':x, 'y':y, 'z':z, 'i':i, 'j':j, 'k':k, 'intensity':intensity}
+        return {'x':np.round(x,2), 'y':np.round(y,2), 'z':np.round(z,2) , 'i':i, 'j':j, 'k':k, 'intensity':intensity}
 
 
     def make_foam_block(self):
@@ -238,18 +256,18 @@ class GcodePlotter():
             
             fig.add_trace(
                 go.Scatter(
-                    x = pgcode.X, 
-                    y = pgcode.Y,
+                    x = pgcode.round_X, 
+                    y = pgcode.round_Y,
                     opacity=0.50, name="Cut Left", visible='legendonly',
                     line={"color":"yellow"}
                     )
                 )
             fig.add_trace(
                 go.Scatter(
-                    x = pgcode.U, 
-                    y = pgcode.V,
+                    x = pgcode.round_U, 
+                    y = pgcode.round_V,
                     opacity=0.50, name="Cut Right", visible='legendonly',
-                    line={"color":"darkgoldenrod"}
+                    line={"color":"gold"}
                     )
                 )
 
@@ -286,18 +304,18 @@ class GcodePlotter():
         # draw the wing profile
         fig.add_trace(
                 go.Scatter(
-                    x = pgcode_wing.X, 
-                    y = pgcode_wing.Y,
+                    x = pgcode_wing.round_X, 
+                    y = pgcode_wing.round_Y,
                     opacity=0.50, name="Wing Left",
-                    line={"color":"lightgreen"}
+                    line={"color":"olive"}
                     )
                 )
         fig.add_trace(
             go.Scatter(
-                x = pgcode_wing.U, 
-                y = pgcode_wing.V,
+                x = pgcode_wing.round_U, 
+                y = pgcode_wing.round_V,
                 opacity=0.50, name="Wing Right",
-                line={"color":"darkgreen"}
+                line={"color":"green"}
                 )
             )
 
@@ -326,13 +344,13 @@ class GcodePlotter():
         if draw_cutting_path:
 
             i = argmin(pgcode.X)
-            min_line = (pgcode.X[i], pgcode.U[i])
+            min_line = (pgcode.round_X[i], pgcode.round_U[i])
             i = argmax(pgcode.X)
-            max_line = (pgcode.X[i], pgcode.U[i])
+            max_line = (pgcode.round_X[i], pgcode.round_U[i])
 
              
-            x0=self.mbox.left
-            y0=min_line[0]
+            x0=float(self.mbox.left)
+            y0=float(min_line[0])
 
             x1=self.mbox.left + self.mbox.width
             y1=min_line[1]
@@ -385,17 +403,17 @@ class GcodePlotter():
             )
 
         # draw the wing profile
-        x0 = self.fbox.left
-        y0 = min(pgcode_wing.X)
+        x0 = float(self.fbox.left)
+        y0 = float(min(pgcode_wing.round_X))
 
         x1 = self.fbox.left + self.fbox.width
-        y1 = min(pgcode_wing.U)
+        y1 = min(pgcode_wing.round_U)
 
         x2 = self.fbox.left + self.fbox.width
-        y2 = max(pgcode_wing.U)
+        y2 = max(pgcode_wing.round_U)
 
         x3 = self.fbox.left
-        y3 = max(pgcode_wing.X)
+        y3 = max(pgcode_wing.round_X)
 
 
         fig.add_trace(
