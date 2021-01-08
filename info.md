@@ -11,6 +11,9 @@ Mostly uses hotwing-core, with some changes:
 * visualization using Plotly
 * website using Dash
 
+# Installation
+
+
 # Example Wing 
 
 This alternative Wiesel wing design from https://www.rcgroups.com/forums/showthread.php?1456458-Wisel-just-the-glider-you-need:

@@ -4,8 +4,8 @@ from hotwing_core.rib import Rib
 from hotwing_core.machine import Machine
 from hotwing_core.panel import Panel
 from hotwing_core.coordinate import Coordinate
-from hotwing_cli.config_options import CONFIG_OPTIONS, get_config, read_config
-from hotwing_cli.validators import validate_side, vaidate_config_file, validate_trim, validate_kerf
+#from hotwing_cli.config_options import CONFIG_OPTIONS, get_config, read_config
+#from hotwing_cli.validators import validate_side, vaidate_config_file, validate_trim, validate_kerf
 from hotwing_core.gcode import Gcode
 import datetime
 
@@ -20,6 +20,16 @@ reload(config_options)
 
 import gcode_formatter
 reload(gcode_formatter)
+
+# Most of this code borrowed from hotwing-cli
+
+def validate_kerf(kerf):
+    # should receive a string
+    if "," in kerf:
+        k = kerf.split(',')
+        return (float(k[0]),float(k[1]))
+    else:
+        return float(kerf)
 
 class GcodeGen():
 
@@ -57,14 +67,13 @@ class GcodeGen():
 
         panel = Panel(rib1, rib2, get_config('Panel',"Width"))
         if side == "right":
-            print("reversing")
             panel = Panel.reverse(panel)
             self.left_offset = root_offset
         else:
             self.left_offset = get_config('Machine',"Width") -  get_config('Panel',"Width") - root_offset
 
         if panel.width > get_config('Machine',"Width"):
-                print("Error: Panel (%s) is bigger than the machine width (%s)." % (get_config('Machine',"Width"), panel.width) )
+                raise Exception("Error: Panel (%s) is bigger than the machine width (%s)." % (get_config('Machine',"Width"), panel.width) )
 
         machine = Machine(  width = get_config('Machine',"Width"), 
                         kerf =  validate_kerf(get_config('Machine',"Kerf")),
