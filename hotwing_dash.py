@@ -57,6 +57,7 @@ inline_checklist = dbc.FormGroup(
                             {"label": "Pre-Stock", "value": "done_profile"},
                             {"label": "Front Stock", "value": "front_stock"},
                             {"label": "Tail Stock", "value": "tail_stock"},
+                            {"label": "With Kerf", "value": "kerf"},
                             {"label": "3D", "value": "3d"},
                             {"label": "Full Screen", "value": "full_screen"},
 
@@ -302,20 +303,20 @@ def display_confirm(value):
 
 
 
-#@app.callback([Output('output-state', 'children'), 
-#                Output("graph", "figure"),
-#                Output("graph_profile", "figure"), 
-#                Output("graph_plan", "figure"), 
-#                Output('gcode','value'), 
-#                Output('editor-card', 'style'),
-#                Output('stats-div','children')
-#                ],
-#              [Input('submit-button-state', 'n_clicks'), 
-#               Input("checklist-input", "value"),
-#               Input("point-slider","value")], 
-#              State('input', 'value')
-#              
-#              )
+@app.callback([Output('output-state', 'children'), 
+                Output("graph", "figure"),
+                Output("graph_profile", "figure"), 
+                Output("graph_plan", "figure"), 
+                Output('gcode','value'), 
+                Output('editor-card', 'style'),
+                Output('stats-div','children')
+                ],
+              [Input('submit-button-state', 'n_clicks'), 
+               Input("checklist-input", "value"),
+               Input("point-slider","value")], 
+              State('input', 'value')
+              
+              )
 def update_output(n_clicks, draw_selection, point_slider, config_input):
     #return {}, {}, {}, {}, {}
     EDITOR_SHOW = {'display':''}
@@ -323,8 +324,9 @@ def update_output(n_clicks, draw_selection, point_slider, config_input):
     try:
         cfg.config.clear()
         cfg.config.read_string(config_input)
-        old_kerf = cfg.get_config('Machine','Kerf')
-        cfg.config.set('Machine','Kerf', "0")
+        if "kerf" not in draw_selection:
+            old_kerf = cfg.get_config('Machine','Kerf')
+            cfg.config.set('Machine','Kerf', "0")
 
         gc_gen = gcode_gen.GcodeGen(cfg)
         gc = gc_gen.gen_gcode()
@@ -365,14 +367,15 @@ def update_output(n_clicks, draw_selection, point_slider, config_input):
                 eye=dict(x=-2.5, y=-2.5, z=2.5)
             )
 
-            fig.update_layout(scene_camera=camera, legend=dict(
-                orientation="h",)
+            fig.update_layout( 
+                legend=dict(orientation="h"),
+                uirevision= "ssss"
             )
         else:
             fig = {}
 
         if "full_screen" in draw_selection:
-            editor_visi3le = EDITOR_HIDE
+            editor_visible = EDITOR_HIDE
         else:
             editor_visible = EDITOR_SHOW
         

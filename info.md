@@ -96,7 +96,7 @@ From the wing plan, the LE-sweep is 100mm - in Hotwing terms this is the Leading
 
 **Rotation** - For this design we need 1 degree of washout on the tip, so I need to set the Rotation Parameter to -1.  This will angle the tip downward by 1 degree.  To angle the tip upward, use a positive number.
 
-**RotationPosition** - Since the Rotation value is now being used, the RotationPosition will be takend into account.  This value is the point along the chord (measured from front to back) where the foil will be rotated.  A value of 0.25 tells HotWing to rotate the foil around a point at 25% of the chord distance.  Since our chord is 7 inches long, the rotation will occur 1.75 (25%\*7) inches back from the tip of the foil.
+**RotationPosition** - Since the Rotation value is now being used, the RotationPosition will be taken into account.  This value is the point along the chord (measured from front to back) where the foil will be rotated.  A value of 0.25 tells HotWing to rotate the foil around a point at 25% of the chord distance.  Since our chord is 180mm long, the rotation will occur 45mm (25%\*180) back from the tip of the foil.
 
 ## Panel
 
@@ -176,23 +176,15 @@ and bottom alignment:
 
 ![align bottom](/static/align_bottom.png)
 
-**StockLeadingEdge** - The stock leading edge is an allowance for a piece of wood stock that will be glued on the leading edge to give it additional strength.  This wood will then be sanded by hand to the shape of the airfoil.  This wing will use a 0.5" x 0.5" piece of stock, so the StockLeadingEdge parameter is set to 0.5.  You can set this to a lower number if you want some additional allowance, say 0.4".  The software simply trims the indicated amount from the leading edge of the wing.
+**StockTrailingEdge** - Useful for trimming the wing for ailerons or elevons as shown in the following exapmle, with StockTrailingEdge=40. After cutting the wing the wire moves to **SafeHeight**, moves horizontally over the foam and performs a vertical cut at the specified distance from the leading edge:
+![tail stock](/static/tailstock.png)
 
-**StockTrailingEdge** - The StockTrailingEdge parameter is similar to StockLeadingEdge, except it is trimmed from the trailing edge instead.  Typically you'll use aileron stock here.  This amount is just measured from the trailing edge - it's up to you to make sure your stock will cover the specified area.
+**StockLeadingEdge** - Similar to the trailing edge, the leading edge can also be trimmed
 
-![Stock Example 1](https://raw.githubusercontent.com/jasonhamilton/hotwing-cli/master/img/tutorial_stock_1.png)
 
-Now our cut foam will look like this:
+**SheetingTop and SheetingBottom** - The next parameters that need to be set are SheetingTop and SheetingBottom.  These define an allowance for balsa, plywood, or other types of sheeting.  For example, setting **SheetingTop=1** and **SheetingBottom=1** reduces the wing by 1mm:
 
-![Stock Example 2](https://raw.githubusercontent.com/jasonhamilton/hotwing-cli/master/img/tutorial_stock_2.png)
-
-And after we glue on and shape the stock we will end up with something like this:
-
-![Stock Example 3](https://raw.githubusercontent.com/jasonhamilton/hotwing-cli/master/img/tutorial_stock_3.png)
-
-**SheetingTop and SheetingBottom** - The next parameters that need to be set are SheetingTop and SheetingBottom.  These define an allowance for balsa, plywood, or other types of sheeting.  This wing will be sheeted with 1/16 inch balsa on the top and bottom, so I set these to 0.0625.  The sheeting can be visualized in this image:
-
-![Sheeting Example](https://raw.githubusercontent.com/jasonhamilton/hotwing-cli/master/img/tutorial_sheeting.png)
+![sheeting](/static/sheeting.png)
 
 ## Machine
 
@@ -208,13 +200,17 @@ Kerf = 2
 
 **Width** - Set Width to the width of your foam cutting machine.
 
+**Height** - Max height - used to check "Out of Bounds" generated gcode
 
+**Depth** - Max depth - used to check "Out of Bounds" generated gcode
 
 **Feedrate** - CNC feedrate speed in units / minute.
 
-**Kerf** - Kerf is the amount of room to offset the hotwire so an accurate amount of foam is cut.
+**Kerf** - Kerf is the amount of room to offset the hotwire so an accurate amount of foam is cut.  Can be an integer or a tuple, in case of a tuple, the first value is the root and the second value the tip kerf.  For example, **Kerf=2,4** yields the following cut path for the root and tip profiles:
 
+![kerf](/static/kerf.png)
 
+## Gcode
 ```cfg
 ...
 [Gcode]
@@ -225,3 +221,11 @@ ConfigAsComment = yes
 InterpolationPoints = 200
 ...
 ```
+
+**GcodeWireOn and GcodeWireOff** - commands to send before cutting and after cutting is completed to turn the Wire On and Off
+
+**AxisMapping** - Axis designators to use for the four axis of the CNC machine, the order is left horizontal, left vertical, right horizontal, right vertical
+
+**ConfigAsComment** - Inserts the config used to generate the gcode as comments in the top of the output gcode file.  Valid values are "yes" and "no"
+
+**InterpolationPoints** - Number of points used to generate the profile - default is 200
