@@ -4,22 +4,17 @@ from hotwing_core.rib import Rib
 from hotwing_core.machine import Machine
 from hotwing_core.panel import Panel
 from hotwing_core.coordinate import Coordinate
-#from hotwing_cli.config_options import CONFIG_OPTIONS, get_config, read_config
-#from hotwing_cli.validators import validate_side, vaidate_config_file, validate_trim, validate_kerf
 from hotwing_core.gcode import Gcode
 import datetime
-
-
 from importlib import reload
 
 import trailing_cutting_strategy
-reload(trailing_cutting_strategy)
-
 import config_options
-reload(config_options)
-
 import gcode_formatter
-reload(gcode_formatter)
+import os
+
+import ssl
+import urllib.request
 
 # Most of this code borrowed from hotwing-cli
 
@@ -31,19 +26,67 @@ def validate_kerf(kerf):
     else:
         return float(kerf)
 
+
+class ProfileCache():
+    def __init__(self, path):
+        self.cache = {}
+
+        if not os.path.isdir(path):
+            os.mkdir(path)
+
+        self.path = path
+
+    def is_url(self, url):
+        if url.strip().lower().startswith("http"):
+            return True
+        else:
+            return False
+
+    def get_profile_filename(self, url):
+        if self.is_url(url):
+
+            filename = self.cache.get(url, None)
+            if filename is None:
+                gcontext = ssl.SSLContext()
+                req = urllib.request.Request(url)
+                res = urllib.request.urlopen(req, context=gcontext)
+                contents = res.read().decode('utf-8')
+
+                lines = contents.split("\n")
+                profile_name = lines[0].strip()
+
+                filename = f"{self.path}/{profile_name}.dat"
+                with open(filename,"w") as f:
+                    f.write(contents)
+
+                self.cache[url] = filename
+
+            return filename
+
+        else:
+            # not a url, so assume it is a filename
+            return url
+
+            
+
+
+
 class GcodeGen():
 
-    def __init__(self, config):
+    def __init__(self, config, profile_cache : ProfileCache):
         self.config = config
         self.points = self.config.get_config('Gcode','InterpolationPoints')
+        self.pcache = profile_cache
 
     def gen_gcode(self):
         get_config = self.config.get_config
         root_offset =  get_config('Panel','RootChordOffset')
         side = get_config('Panel','TipChordSide')
 
+        root_profile_filename = self.pcache.get_profile_filename(get_config('RootChord',"Profile"))
 
-        rib1 = Rib( get_config('RootChord',"Profile"), 
+
+        rib1 = Rib( root_profile_filename, 
                             scale=get_config('RootChord',"Width"), 
                             xy_offset=Coordinate(get_config('RootChord',"LeadingEdgeOffset"),0), 
                             top_sheet=get_config('Wing',"SheetingTop"), 
@@ -54,7 +97,9 @@ class GcodeGen():
                             rotation_pos=get_config('RootChord',"RotationPosition"),
                             )
 
-        rib2 = Rib( get_config('TipChord',"Profile"), 
+        tip_profile_filename = self.pcache.get_profile_filename(get_config('TipChord',"Profile"))
+
+        rib2 = Rib( tip_profile_filename, 
                             scale=get_config('TipChord',"Width"), 
                             xy_offset=Coordinate(get_config('TipChord',"LeadingEdgeOffset"),0), 
                             top_sheet=get_config('Wing',"SheetingTop"), 

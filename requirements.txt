@@ -3,3 +3,5 @@ dash-ace
 dash-bootstrap-components
 dash-extensions
 hotwing-core
+numpy
+flask-cors

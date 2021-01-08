@@ -13,6 +13,21 @@ Mostly uses hotwing-core, with some changes:
 
 # Installation
 
+```
+pip install -r requirements.txt
+```
+
+# Running
+
+Dash runs on top of a Flask container, it can be run from command line:
+
+``` 
+python hotwing_dash.py
+```
+
+Or more production setup using Heroku, Elastic Bean Stalk or roll your own using uWSGI, gunicorn and nginx
+
+
 
 # Example Wing 
 
@@ -232,3 +247,7 @@ InterpolationPoints = 200
 **ConfigAsComment** - Inserts the config used to generate the gcode as comments in the top of the output gcode file.  Valid values are "yes" and "no"
 
 **InterpolationPoints** - Number of points used to generate the profile - default is 200
+
+# TODO
+* Config validation
+* Cache profiles

@@ -25,6 +25,7 @@ import string
 import base64
 
 import json
+import glob
 
 validFilenameChars = "-_.() %s%s" % (string.ascii_letters, string.digits)
 
@@ -37,6 +38,8 @@ cfg = config_options.Config("")
 
 with open("example.cfg") as f:
     config_template = f.read()
+
+profile_cache = gcode_gen.ProfileCache("profiles")
 
 # Build App
 app = dash.Dash(__name__,
@@ -141,7 +144,7 @@ gen_layout =  html.Div([
                         style={"width":"100%"}
                     )
                 ])
-            ), className="col-5", id='editor-card',
+            ), className="col-6", id='editor-card',
         ),
         dbc.Col([
             dbc.Form([inline_checklist]),
@@ -182,7 +185,7 @@ gen_layout =  html.Div([
                     html.Div(id="stats-output-div")
                 ])
             ])
-        ], className="col-7",id="chart-card"),
+        ], className="col-6",id="chart-card"),
     ]),
 
 ], id="gen_div", style={"display":"none"})
@@ -328,7 +331,7 @@ def update_output(n_clicks, draw_selection, point_slider, config_input):
             old_kerf = cfg.get_config('Machine','Kerf')
             cfg.config.set('Machine','Kerf', "0")
 
-        gc_gen = gcode_gen.GcodeGen(cfg)
+        gc_gen = gcode_gen.GcodeGen(cfg, profile_cache)
         gc = gc_gen.gen_gcode()
         gcode_output = gc.code_as_str
         
@@ -458,7 +461,7 @@ def update_card_classnames(style):
     if style['display'] == 'none':
         return "col-12"
     else:
-        return "col-7"
+        return "col-6"
 
 @app.callback( Output("3d-card", "style"), Input("graph", "figure"))
 def show_or_hide_3d(fig):
@@ -497,7 +500,13 @@ def autocompleter():
     print(prefix)
     autocomplete = []
 
-    if '=' in prefix:
+    if profile_cache.path in prefix:
+        profile_names = glob.glob(profile_cache.path + "/*.dat")
+        for p in profile_names:
+            p = p.split("/")[-1]
+            autocomplete.append({"name": p, "value": p, "score": 1000, "meta": "Profile"})
+
+    elif '=' in prefix:
         parameter = prefix.split("=")[0].strip()
         parameter_lookup = prefix.split("=")[-1]
         for heading, section in cfg.CONFIG_OPTIONS.items():
