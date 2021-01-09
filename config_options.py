@@ -113,12 +113,12 @@ class Config():
             if len(section) == 1:
                 current_section = section[0]
                 if current_section not in self.CONFIG_OPTIONS:
-                    result.append(f"Unrecognized section:{s} on line {i}")
+                    result.append(f"Unrecognized section:{s} on line {i+1}")
 
             elif len(option) == 1:
                 key, _, value = option[0]
                 if key not in self.CONFIG_OPTIONS[current_section]:
-                    result.append(f"Unrecognized key for [{current_section}]:{key} on line {i}")
+                    result.append(f"Unrecognized key for [{current_section}]:{key} on line {i+1}")
                 else:
                     type_ = self.CONFIG_OPTIONS[current_section][key]["type"]
                     domain = self.CONFIG_OPTIONS[current_section][key].get("domain", None)
@@ -128,15 +128,15 @@ class Config():
 
                     if domain is not None:
                         if value not in domain:
-                            result.append(f"Unrecognized value for [{current_section}],{key}:{value} on line {i}.  Valid options:{domain}")
+                            result.append(f"Unrecognized value for [{current_section}],{key}:{value} on line {i+1}.  Valid options:{domain}")
                     elif validator is not None:
                         if not validator(value):
-                            result.append(f"Invalid value for [{current_section}],{key}:{value} on line {i}.  ")
+                            result.append(f"Invalid value for [{current_section}],{key}:{value} on line {i+1}.  ")
                     else:
                         try:
                             type_(value)
                         except:
-                            result.append(f"Unparseable value for [{current_section}],{key}:{value} on line {i}.  Valid options:{str(type_)}")
+                            result.append(f"Unparseable value for [{current_section}],{key}:{value} on line {i+1}.  Valid options:{str(type_)}")
 
 
 
