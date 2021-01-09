@@ -26,15 +26,12 @@ import base64
 
 import json
 import glob
+import traceback
 
-validFilenameChars = "-_.() %s%s" % (string.ascii_letters, string.digits)
-
-def removeDisallowedFilenameChars(filename):
-    cleanedFilename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore').decode()
-    return ''.join(c for c in cleanedFilename if c in validFilenameChars)
+from utils import *
 
 
-cfg = config_options.Config("")
+cfg = config_options.Config()
 
 with open("example.cfg") as f:
     config_template = f.read()
@@ -321,12 +318,19 @@ def display_confirm(value):
               
               )
 def update_output(n_clicks, draw_selection, point_slider, config_input):
-    #return {}, {}, {}, {}, {}
     EDITOR_SHOW = {'display':''}
     EDITOR_HIDE = {'display':'none'}
+    validation = []
+
+    output_error_msg = {} 
     try:
-        cfg.config.clear()
-        cfg.config.read_string(config_input)
+        validation = cfg.read_string(config_input)
+        if validation:
+            err_msg = list_to_html(validation)
+            output_error_msg = dbc.Alert(err_msg, color="danger")
+            raise Exception("Validation Failed")
+            
+
         if "kerf" not in draw_selection:
             old_kerf = cfg.get_config('Machine','Kerf')
             cfg.config.set('Machine','Kerf', "0")
@@ -443,9 +447,11 @@ def update_output(n_clicks, draw_selection, point_slider, config_input):
         fig_plan.update_layout(legend=dict(
             orientation="h"
         ))
-        msg = {} 
+  
     except Exception as e:
-        msg = dbc.Alert(str(e), color="danger")
+        traceback.print_exc()
+        if not validation:
+            output_error_msg = dbc.Alert(str(e), color="danger")
         fig = {}
         fig_p = {}
         fig_plan = {}
@@ -453,7 +459,7 @@ def update_output(n_clicks, draw_selection, point_slider, config_input):
         editor_visible = EDITOR_SHOW
         stats_output = ""
     
-    return msg, fig, fig_p, fig_plan, gcode_output, editor_visible, stats_output
+    return output_error_msg, fig, fig_p, fig_plan, gcode_output, editor_visible, stats_output
 
 @app.callback(Output("chart-card","className"),
                Input("editor-card","style"))
@@ -476,28 +482,30 @@ def show_or_hide_3d(fig):
                 Output("stats-output-div","children")],
               Input("stats-div","children"))
 def show_card_head_warning(children):
-    stats = json.loads(children)
-    output = []
-    
-    output.append('Wing Out of Bounds: %d ' % stats['wing']['out_of_bounds'])
-    if stats['wing']['out_of_bounds'] > 0:
-        profile_header = {"background-color":"#dc3545","color":"white"}
+    if children == "":
+        return {},{},""
     else:
-        profile_header = {}
+        stats = json.loads(children)
+        output = []
+        
+        output.append('Wing Out of Bounds: %d ' % stats['wing']['out_of_bounds'])
+        if stats['wing']['out_of_bounds'] > 0:
+            profile_header = {"background-color":"#dc3545","color":"white"}
+        else:
+            profile_header = {}
 
-    if stats['machine']['out_of_bounds'] > 0:
-        plan_header = {"background-color":"#dc3545","color":"white"}
-    else:
-        plan_header = {}        
+        if stats['machine']['out_of_bounds'] > 0:
+            plan_header = {"background-color":"#dc3545","color":"white"}
+        else:
+            plan_header = {}        
 
-    return profile_header,\
-           plan_header, \
-           output
+        return profile_header,\
+            plan_header, \
+            output
 
 @server.route('/autocompleter', methods=['GET'])
 def autocompleter():
     prefix = request.args.get("prefix")
-    print(prefix)
     autocomplete = []
 
     if profile_cache.path in prefix:

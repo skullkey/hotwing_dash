@@ -48,9 +48,12 @@ class ProfileCache():
             filename = self.cache.get(url, None)
             if filename is None:
                 gcontext = ssl.SSLContext()
-                req = urllib.request.Request(url)
-                res = urllib.request.urlopen(req, context=gcontext)
-                contents = res.read().decode('utf-8')
+                try:
+                    req = urllib.request.Request(url)
+                    res = urllib.request.urlopen(req, context=gcontext)
+                    contents = res.read().decode('utf-8')
+                except Exception as e:
+                    raise Exception(f"Could not open url:{url}")
 
                 lines = contents.split("\n")
                 profile_name = lines[0].strip()

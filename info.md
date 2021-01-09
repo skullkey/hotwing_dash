@@ -248,6 +248,3 @@ InterpolationPoints = 200
 
 **InterpolationPoints** - Number of points used to generate the profile - default is 200
 
-# TODO
-* Config validation
-* Cache profiles
