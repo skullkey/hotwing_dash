@@ -5,3 +5,4 @@ dash-extensions
 hotwing-core
 numpy
 flask-cors
+numexpr

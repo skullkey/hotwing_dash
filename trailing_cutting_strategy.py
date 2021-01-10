@@ -3,13 +3,14 @@ from hotwing_core.profile import Profile
 from hotwing_core.panel import Panel
 from hotwing_core.coordinate import Coordinate
 from hotwing_core.cutting_strategies.base import CuttingStrategyBase
+import math
 
 
 class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
     """
     Trailing edge first cutting strategy
     """
-    def cut(self, horizontal_offset, vertical_offset_left = 0, vertical_offset_right = None, vertical_align_profiles = "default"):
+    def cut(self, horizontal_offset, vertical_offset_left = 0, vertical_offset_right = None,   vertical_align_profiles = "default", dihedral = 0.0):
         m = self.machine
         dwell_time = 1
         le_offset = 1
@@ -42,7 +43,9 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
                 vertical_offset_right = vertical_offset_left + left_profile_bottom - right_profile_bottom
             elif vertical_offset_left is None :
                 vertical_offset_left = vertical_offset_right + right_profile_bottom - left_profile_bottom
-
+        elif vertical_align_profiles == "dihedral":
+            width = m.panel.width
+            vertical_offset_right = vertical_offset_left + width * math.sin(math.pi/180*dihedral)
 
         # coordinates start with leading edge in profile files
         # we want it to start with trailing edge

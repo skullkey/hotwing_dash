@@ -15,6 +15,7 @@ import os
 
 import ssl
 import urllib.request
+import json
 
 # Most of this code borrowed from hotwing-cli
 
@@ -35,6 +36,19 @@ class ProfileCache():
             os.mkdir(path)
 
         self.path = path
+
+        self.load()
+
+    def load(self):
+        try:
+            with open(self.path + "/cache.json") as f:
+                self.cache = json.load(f)
+        except:
+            self.cache = {}
+
+    def save(self):
+        with open(self.path + "/cache.json", "w") as f:
+            json.dump(self.cache, f)
 
     def is_url(self, url):
         if url.strip().lower().startswith("http"):
@@ -63,6 +77,7 @@ class ProfileCache():
                     f.write(contents)
 
                 self.cache[url] = filename
+                self.save()
 
             return filename
 
@@ -169,12 +184,14 @@ class GcodeGen():
             vertical_offset_right = get_config("Wing","VerticalOffsetRoot")
 
         vertical_align_profiles = get_config("Wing","VerticalAlignProfiles")
+        dihedral = get_config("Wing","Dihedral")
 
 
         cs.cut(get_config("Wing","HorizontalOffset"), 
                vertical_offset_left, 
                vertical_offset_right, 
-               vertical_align_profiles)
+               vertical_align_profiles,
+               dihedral)
 
         machine.gc.normalize()
 

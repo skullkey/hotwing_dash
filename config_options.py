@@ -2,6 +2,8 @@
 
 import configparser
 from io import StringIO
+import numexpr
+import math
 
 
 def axis_mapping(input_str):
@@ -46,7 +48,8 @@ class Config():
                                 "HorizontalOffset":{"type":float,"required":False, "default": 0},                    
                                 "VerticalOffsetRoot":{"type":float,"required":False, "default": 25},                    
                                 "VerticalOffsetTip":{"type":float,"required":False, "default": None},                    
-                                "VerticalAlignProfiles":{"type":str,"required":False, "default": "default", "domain":["default","bottom"]}, 
+                                "Dihedral":{"type":float,"required":False, "default":0.0},
+                                "VerticalAlignProfiles":{"type":str,"required":False, "default": "default", "domain":["default","bottom","dihedral"]}, 
                                 "StockLeadingEdge":{"type":float,"required":False,"default":0},
                                 "StockTrailingEdge":{"type":float,"required":False,"default":0},
                                 "SheetingTop":{"type":float,"required":False,"default":0},
@@ -82,11 +85,15 @@ class Config():
         opt = self.CONFIG_OPTIONS[section][parameter]
         try:
             if opt['type'] == float:
-                return self.config.getfloat(section,parameter)
+                v = self.config.get(section,parameter)
+                v = numexpr.evaluate(v).item()
+                return float(v)
             elif opt['type'] == str:
                 return self.config.get(section,parameter) 
             elif opt['type'] == int:
-                return self.config.getint(section,parameter) 
+                v = self.config.get(section,parameter)
+                v = numexpr.evaluate(v).item()
+                return int(v) 
             elif opt['type'] == bool:
                 return self.config.getboolean(section,parameter)
             else:
@@ -103,6 +110,7 @@ class Config():
         self.read_string(config_string)
 
     def validate_config(self, config_string):
+        c = self.get_config
         result = []
         current_section = ""
 
@@ -134,7 +142,10 @@ class Config():
                             result.append(f"Invalid value for [{current_section}],{key}:{value} on line {i+1}.  ")
                     else:
                         try:
-                            type_(value)
+                            if type_ in [int, float]:
+                                test = type_(numexpr.evaluate(value).item())
+                            else:
+                                test = type_(value)
                         except:
                             result.append(f"Unparseable value for [{current_section}],{key}:{value} on line {i+1}.  Valid options:{str(type_)}")
 
