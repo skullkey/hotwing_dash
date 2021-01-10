@@ -27,9 +27,14 @@ python hotwing_dash.py
 
 Or more production setup using Heroku, Elastic Bean Stalk or roll your own using uWSGI, gunicorn and nginx
 
+# Config Editor
 
+The config editor is implemeted using [dash-ace](https://github.com/reasoned-ai/dash-ace) and supports:
 
-# Example Wing 
+* autocompletion of parameters, values
+* math expressions using [numexpr](https://github.com/pydata/numexpr)
+
+# Example Wing Config File
 
 This alternative Wiesel wing design from https://www.rcgroups.com/forums/showthread.php?1456458-Wisel-just-the-glider-you-need:
 
@@ -38,9 +43,6 @@ This alternative Wiesel wing design from https://www.rcgroups.com/forums/showthr
 The wingspan is 900mm, the root chord is 330mm and the tip chord is 180mm.  In HotWing we work with wing halves, so let's see what that looks like.
 
 ![Half Wing](/static/wing_plan_half.png)
-
-
-# Example Config File
 
 ## Project
 
