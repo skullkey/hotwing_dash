@@ -41,7 +41,7 @@ profile_cache = gcode_gen.ProfileCache("profiles")
 # Build App
 app = dash.Dash(__name__,
                 server=server,
-                routes_pathname_prefix='/hw/',
+                routes_pathname_prefix='/',
                 external_stylesheets=[dbc.themes.BOOTSTRAP],
                 suppress_callback_exceptions=True,
                 prevent_initial_callbacks=True,
