@@ -44,8 +44,13 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             elif vertical_offset_left is None :
                 vertical_offset_left = vertical_offset_right + right_profile_bottom - left_profile_bottom
         elif vertical_align_profiles == "dihedral":
-            width = m.panel.width
-            vertical_offset_right = vertical_offset_left + width * math.sin(math.pi/180*dihedral)
+            if vertical_offset_right is None:
+                width = m.panel.width
+                vertical_offset_right = vertical_offset_left + width * math.sin(math.pi/180*dihedral)
+            elif vertical_offset_left is None:
+                width = m.panel.width
+                vertical_offset_left = vertical_offset_right - width * math.sin(math.pi/180*dihedral)
+
 
         # coordinates start with leading edge in profile files
         # we want it to start with trailing edge

@@ -184,7 +184,7 @@ Note that if the HorizontalOffset leads to an infeasible cut (i.e. negative mach
 
 **VerticalOffsetTip** - [New] Similar to VerticalOffsetRoot, except for the tip profile, useful for cutting dihedral into the wing.  This setting is optional and if omitted, the offset is determined by the **VerticalAlignProfiles**
 
-**VerticalAlignProfiles** - Used in the case when VerticalOffsetTip is omitted.  Two options are available "default" and "bottom".  "default" aligns the chords of the Tip and Root profile.  "bottom" aligns the lowest points.
+**VerticalAlignProfiles** - Used in the case when VerticalOffsetTip is omitted.  Three options are available "default", "bottom" and "dihedral".  "default" aligns the chords of the Tip and Root profile.  "bottom" aligns the lowest points. "dihedral" uses the **Dihedral** property to determine the offset
 
 For example the following two figures shows default alignment:
 
@@ -193,6 +193,8 @@ For example the following two figures shows default alignment:
 and bottom alignment:
 
 ![align bottom](/static/align_bottom.png)
+
+**Dihedral** - sets the dihedral in degrees - ignored if **VerticalAlignProfiles** is not set to "diheral"
 
 **StockTrailingEdge** - Useful for trimming the wing for ailerons or elevons as shown in the following exapmle, with StockTrailingEdge=40. After cutting the wing the wire moves to **SafeHeight**, moves horizontally over the foam and performs a vertical cut at the specified distance from the leading edge:
 ![tail stock](/static/tailstock.png)
