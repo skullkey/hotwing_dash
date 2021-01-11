@@ -6,6 +6,7 @@ import dash_core_components as dcc
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from dash_extensions import Download
+from dash_extensions import Keyboard
 
 import gcode_gen
 import config_options
@@ -29,6 +30,7 @@ import glob
 import traceback
 
 from utils import *
+from dash.exceptions import PreventUpdate
 
 
 cfg = config_options.Config()
@@ -110,7 +112,7 @@ gen_layout =  html.Div([
     html.Div(id='output-state'),
     dbc.Button(id='close-button-state', n_clicks=0, children='Close', color="danger", className="mr-2"),                   
     dbc.Button(id='save-button-state', n_clicks=0, children='Download', color="success", className="mr-2"),
-    dbc.Button(id='submit-button-state', n_clicks=0, children='Draw', color="primary", className="mr-2"),
+    dbc.Button(id='submit-button-state', n_clicks=0, children='Draw (Ctrl+Enter)', color="primary", className="mr-2"),
     Download(id="download"),
     dcc.ConfirmDialog(
         id='confirm',
@@ -121,11 +123,7 @@ gen_layout =  html.Div([
         dbc.Col(
             dbc.Card(
                 dbc.CardBody([
-
-
-                    #dash_editor_components.PythonEditor(
-                    #    id='input', value = "".join(lines)
-                    #),
+                    Keyboard(id="keyboard"), html.Div(id="output"),
                     dash_ace.DashAceEditor(
                         id='input',
                         value="",
@@ -139,6 +137,7 @@ gen_layout =  html.Div([
                         placeholder='Python code ...',
                         wrapEnabled=True,
                         prefixLine=True,
+                        maxLines=40,
                         style={"width":"100%"}
                     )
                 ])
@@ -314,11 +313,18 @@ def display_confirm(value):
                 ],
               [Input('submit-button-state', 'n_clicks'), 
                Input("checklist-input", "value"),
-               Input("point-slider","value")], 
+               Input("point-slider","value"),
+               Input("keyboard", "keydown")], 
               State('input', 'value')
               
               )
-def update_output(n_clicks, draw_selection, point_slider, config_input):
+def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config_input):
+    if keyboard_event is not None:
+        if keyboard_event.get('key',"") == "Enter" and keyboard_event.get('ctrlKey',False) :
+            pass
+        else:
+            raise PreventUpdate
+
     EDITOR_SHOW = {'display':''}
     EDITOR_HIDE = {'display':'none'}
     validation = []
@@ -503,6 +509,8 @@ def show_card_head_warning(children):
         return profile_header,\
             plan_header, \
             output
+
+
 
 @server.route('/autocompleter', methods=['GET'])
 def autocompleter():
