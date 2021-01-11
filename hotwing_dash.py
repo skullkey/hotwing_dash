@@ -45,7 +45,8 @@ app = dash.Dash(__name__,
                 external_stylesheets=[dbc.themes.BOOTSTRAP],
                 suppress_callback_exceptions=True,
                 prevent_initial_callbacks=True,
-                assets_folder='static'
+                assets_folder='static', 
+                title="Hotwing-Dash"
                 )
 
 inline_checklist = dbc.FormGroup(
@@ -189,7 +190,7 @@ gen_layout =  html.Div([
 
 main_tab_layout.children = [file_open_layout, gen_layout]
 
-with open("info.md") as f:
+with open("README.md") as f:
     info_md = f.read()
 
 info_tab_layout = html.Div([
@@ -197,7 +198,7 @@ info_tab_layout = html.Div([
         dbc.Col(
             dbc.Card(
                 dbc.CardBody([
-                    dcc.Markdown(info_md)
+                    dcc.Markdown(info_md, dangerously_allow_html=True)
                 ])
             )
         )

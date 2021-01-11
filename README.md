@@ -1,15 +1,21 @@
 
-# Hotwing Slicer
+<p align="center">
+ <img src='static/hotwing_dash_logo2.png'/>
+</p>
 
-Config and Gcode visualizer for the [hotwing-cli](https://github.com/jasonhamilton/hotwing-cli) and [hotwing-core library](https://github.com/jasonhamilton/hotwing-core).  Also the tutorial below based on hotwing-cli. 
+# Hotwing Dash
 
-Mostly uses hotwing-core, with some changes:
+This is a config and Gcode visualizer for [hotwing-cli](https://github.com/jasonhamilton/hotwing-cli) and [hotwing-core library](https://github.com/jasonhamilton/hotwing-core).  
+
+It is intended for generating Gcode to be used for a four-axis hotwire CNC foam cutter to produce foam wings or foam cores for RC models. 
+
+The project mostly uses [hotwing-core library](https://github.com/jasonhamilton/hotwing-core), with:
 
 * alternative cutting strategy - trailing edge first
 * all hotwing-cli command line options now part of config
 * additional config options (see Gcode section below)
-* visualization using Plotly
-* website using Dash
+* visualization using [Plotly](https://plotly.com/)
+* website using [Dash](https://plotly.com/dash/)
 
 # Installation
 
@@ -29,6 +35,8 @@ Or more production setup using Heroku, Elastic Bean Stalk or roll your own using
 
 # Config Editor
 
+To define the configuration of a wing, either select "new" or "upload" from the **Generate** tab.  Suggest starting with "new" to get a sense of the options available.
+
 The config editor is implemeted using [dash-ace](https://github.com/reasoned-ai/dash-ace) and supports:
 
 * autocompletion of parameters, values
@@ -36,13 +44,13 @@ The config editor is implemeted using [dash-ace](https://github.com/reasoned-ai/
 
 # Example Wing Config File
 
-This alternative Wiesel wing design from https://www.rcgroups.com/forums/showthread.php?1456458-Wisel-just-the-glider-you-need:
+In order to explain the various options, this alternative Wiesel wing design from https://www.rcgroups.com/forums/showthread.php?1456458-Wisel-just-the-glider-you-need is used:
 
-![Whole Wing](/static/wing_plan_full.png)
+![Whole Wing](static/wing_plan_full.png)
 
 The wingspan is 900mm, the root chord is 330mm and the tip chord is 180mm.  In HotWing we work with wing halves, so let's see what that looks like.
 
-![Half Wing](/static/wing_plan_half.png)
+![Half Wing](static/wing_plan_half.png)
 
 ## Project
 
