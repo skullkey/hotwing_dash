@@ -168,6 +168,7 @@ SafeHeight = 60
 HorizontalOffset = 0
 VerticalOffsetRoot = 25
 VerticalOffsetTip = 25
+Inverted = no
 VerticalAlignProfiles = default
 StockLeadingEdge = 0
 StockTrailingEdge = 50
@@ -193,6 +194,8 @@ Note that if the HorizontalOffset leads to an infeasible cut (i.e. negative mach
 ![plan offset cutpath](/static/horz_vert_offset_plan_cutpath.png)
 
 **VerticalOffsetTip** - [New] Similar to VerticalOffsetRoot, except for the tip profile, useful for cutting dihedral into the wing.  This setting is optional and if omitted, the offset is determined by the **VerticalAlignProfiles**
+
+**Inverted** - [New] Should the wing be inverted - useful for cutting left and right hand wings on the same side of the foam cutter
 
 **VerticalAlignProfiles** - Used in the case when VerticalOffsetTip is omitted.  Three options are available "default", "bottom" and "dihedral".  "default" aligns the chords of the Tip and Root profile.  "bottom" aligns the lowest points. "dihedral" uses the **Dihedral** property to determine the offset
 

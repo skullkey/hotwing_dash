@@ -48,6 +48,7 @@ class Config():
                                 "HorizontalOffset":{"type":float,"required":False, "default": 0},                    
                                 "VerticalOffsetRoot":{"type":float,"required":False, "default": 25},                    
                                 "VerticalOffsetTip":{"type":float,"required":False, "default": None},                    
+                                "Inverted":{"type":bool, "required":False, "default":False},
                                 "Dihedral":{"type":float,"required":False, "default":0.0},
                                 "VerticalAlignProfiles":{"type":str,"required":False, "default": "default", "domain":["default","bottom","dihedral"]}, 
                                 "StockLeadingEdge":{"type":float,"required":False,"default":0},

@@ -198,13 +198,15 @@ class GcodeGen():
 
         vertical_align_profiles = get_config("Wing","VerticalAlignProfiles")
         dihedral = get_config("Wing","Dihedral")
+        inverted = get_config("Wing","Inverted")
 
 
         cs.cut(get_config("Wing","HorizontalOffset"), 
                vertical_offset_left, 
                vertical_offset_right, 
                vertical_align_profiles,
-               dihedral)
+               dihedral,
+               inverted)
 
         machine.gc.normalize()
 

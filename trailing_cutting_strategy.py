@@ -10,7 +10,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
     """
     Trailing edge first cutting strategy
     """
-    def cut(self, horizontal_offset, vertical_offset_left = 0, vertical_offset_right = None,   vertical_align_profiles = "default", dihedral = 0.0):
+    def cut(self, horizontal_offset, vertical_offset_left = 0, vertical_offset_right = None,   vertical_align_profiles = "default", dihedral = 0.0, inverted = False):
         m = self.machine
         dwell_time = 1
         le_offset = 1
@@ -30,6 +30,11 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
         # Get profile_max - will use it to reverse the profile
         profile_max = max(profile1.right_midpoint.x, profile2.right_midpoint.x)
 
+       # Invert the y-axis to get inverted profiles
+        mult = 1.0
+        if inverted:
+            mult = -1.0
+
         # auto aligning of profiles
         if vertical_align_profiles == "default":
             if vertical_offset_right is None :
@@ -40,30 +45,37 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             left_profile_bottom = profile1.bottom.bounds[0].y
             right_profile_bottom = profile2.bottom.bounds[0].y
             if vertical_offset_right is None :
-                vertical_offset_right = vertical_offset_left + left_profile_bottom - right_profile_bottom
+                vertical_offset_right = vertical_offset_left + mult * (left_profile_bottom - right_profile_bottom)
             elif vertical_offset_left is None :
-                vertical_offset_left = vertical_offset_right + right_profile_bottom - left_profile_bottom
+                vertical_offset_left = vertical_offset_right + mult * (right_profile_bottom - left_profile_bottom)
         elif vertical_align_profiles == "dihedral":
             if vertical_offset_right is None:
                 width = m.panel.width
-                vertical_offset_right = vertical_offset_left + width * math.sin(math.pi/180*dihedral)
+                vertical_offset_right = vertical_offset_left + mult * width * math.sin(math.pi/180*dihedral)
             elif vertical_offset_left is None:
                 width = m.panel.width
-                vertical_offset_left = vertical_offset_right - width * math.sin(math.pi/180*dihedral)
+                vertical_offset_left = vertical_offset_right - mult * width * math.sin(math.pi/180*dihedral)
+
+
+ 
 
 
         # coordinates start with leading edge in profile files
         # we want it to start with trailing edge
         # so we reverse it
         profile1.top.coordinates = [Coordinate(profile_max - c.x + horizontal_offset + te_offset, \
-                                    c.y + vertical_offset_left) for c in reversed(profile1.top.coordinates)]
+                                    mult * c.y + vertical_offset_left) for c in reversed(profile1.top.coordinates)]
         profile1.bottom.coordinates = [Coordinate(profile_max - c.x + horizontal_offset + te_offset, \
-                                    c.y + vertical_offset_left) for c in reversed(profile1.bottom.coordinates)]
+                                    mult * c.y + vertical_offset_left) for c in reversed(profile1.bottom.coordinates)]
 
         profile2.top.coordinates = [Coordinate(profile_max - c.x + horizontal_offset + te_offset, \
-                                    c.y + vertical_offset_right) for c in reversed(profile2.top.coordinates)]
+                                    mult * c.y + vertical_offset_right) for c in reversed(profile2.top.coordinates)]
         profile2.bottom.coordinates = [Coordinate(profile_max - c.x + horizontal_offset + te_offset, \
-                                    c.y + vertical_offset_right) for c in reversed(profile2.bottom.coordinates)]
+                                    mult * c.y + vertical_offset_right) for c in reversed(profile2.bottom.coordinates)]
+
+
+
+
 
         # Trim the overlap
         # profile1 = Profile.trim_overlap(profile1)
