@@ -319,7 +319,10 @@ def display_confirm(value):
               
               )
 def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config_input):
-    if keyboard_event is not None:
+    ctx = dash.callback_context
+    input_trigger = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if input_trigger == 'keyboard':
         if keyboard_event.get('key',"") == "Enter" and keyboard_event.get('ctrlKey',False) :
             pass
         else:
