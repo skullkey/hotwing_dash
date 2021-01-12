@@ -16,6 +16,8 @@ import os
 import ssl
 import urllib.request
 import json
+from urllib.parse import urlparse
+import utils
 
 # Most of this code borrowed from hotwing-cli
 
@@ -29,6 +31,7 @@ def validate_kerf(kerf):
 
 
 class ProfileCache():
+    
     def __init__(self, path):
         self.cache = {}
 
@@ -38,6 +41,11 @@ class ProfileCache():
         self.path = path
 
         self.load()
+
+        with open("profile_whitelist") as f:
+            self.WHITELIST = [l.strip().lower() for l in f.readlines()]
+
+
 
     def load(self):
         try:
@@ -56,28 +64,33 @@ class ProfileCache():
         else:
             return False
 
+
     def get_profile_filename(self, url):
         if self.is_url(url):
 
             filename = self.cache.get(url, None)
             if filename is None:
-                gcontext = ssl.SSLContext()
-                try:
-                    req = urllib.request.Request(url)
-                    res = urllib.request.urlopen(req, context=gcontext)
-                    contents = res.read().decode('utf-8')
-                except Exception as e:
-                    raise Exception(f"Could not open url:{url}")
+                parsed_url = urlparse(url)
+                if parsed_url.netloc.lower() in self.WHITELIST:
+                    gcontext = ssl.SSLContext()
+                    try:
+                        req = urllib.request.Request(url)
+                        res = urllib.request.urlopen(req, context=gcontext)
+                        contents = res.read().decode('utf-8')
+                    except Exception:
+                        raise Exception(f"Could not open url:{url}")
 
-                lines = contents.split("\n")
-                profile_name = lines[0].strip()
+                    lines = contents.split("\n")
+                    profile_name = utils.removeDisallowedFilenameChars(lines[0].strip())
 
-                filename = f"{self.path}/{profile_name}.dat"
-                with open(filename,"w") as f:
-                    f.write(contents)
+                    filename = f"{self.path}/{profile_name}.dat"
+                    with open(filename,"w") as f:
+                        f.write(contents)
 
-                self.cache[url] = filename
-                self.save()
+                    self.cache[url] = filename
+                    self.save()
+                else:
+                    raise Exception("%s not in whitelist" % parsed_url.netloc)
 
             return filename
 
