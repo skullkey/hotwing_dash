@@ -89,11 +89,15 @@ class GcodeBox():
         self.depth = box_depth
 
 class GcodePlotter():
-    def __init__(self, machine_width, machine_height, machine_depth, foam_left_offset, foam_width, foam_bottom_offset, foam_height, foam_depth_offset, foam_depth):
+    def __init__(self, machine_width, machine_height, machine_depth, 
+                      foam_left_offset, foam_width, foam_bottom_offset, foam_height, foam_depth_offset, foam_depth,
+                      wing_plan):
         # box representing the bounds of the machine
         self.mbox = GcodeBox(0, machine_width, 0, machine_height, 0, machine_depth)
         # box representing the bounds of the foam block
         self.fbox = GcodeBox(foam_left_offset, foam_width, foam_bottom_offset, foam_height, foam_depth_offset, foam_depth)
+        # coordinates of the wing in plan [left_top, right_top, right_bottom, left_bottom]
+        self.wing_plan = wing_plan
 
     
     def setup_fig(self, fig):
@@ -393,23 +397,41 @@ class GcodePlotter():
             )
 
         # draw the wing profile
+
+        # bottom left from projection
         x0 = float(self.fbox.left)
         y0 = float(min(pgcode_wing.round_X))
 
-        x1 = self.fbox.left + self.fbox.width
-        y1 = min(pgcode_wing.round_U)
+        # bottom left from wingplan
+        bl = self.wing_plan[-1]
+        delta_x = 0 #bl[0] - x0
+        delta_y = bl[1] - y0
 
-        x2 = self.fbox.left + self.fbox.width
-        y2 = max(pgcode_wing.round_U)
+        # overlay the wing plan on the projected location
+        wing_x = []
+        wing_y = []
+        for c in self.wing_plan:
+            wing_x.append(c[0] - delta_x)
+            wing_y.append(c[1] - delta_y)
 
-        x3 = self.fbox.left
-        y3 = max(pgcode_wing.round_X)
+        wing_x.append(self.wing_plan[0][0] - delta_x)
+        wing_y.append(self.wing_plan[0][1] - delta_y)
+
+#
+        #x1 = self.fbox.left + self.fbox.width
+        #y1 = min(pgcode_wing.round_U)
+#
+        #x2 = self.fbox.left + self.fbox.width
+        #y2 = max(pgcode_wing.round_U)
+#
+        #x3 = self.fbox.left
+        #y3 = max(pgcode_wing.round_X)
 
 
         fig.add_trace(
                 go.Scatter(
-                    x = [x0,x1,x2,x3, x0], 
-                    y = [y0,y1,y2,y3, y0],
+                    x = wing_x, 
+                    y = wing_y,
                     name = "Wing Plan",
                     line = {"color":"green"}
                 )

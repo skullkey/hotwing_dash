@@ -117,7 +117,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             if fix_left_offset:
                 self.h_delta = max(0.0, left_bottom[0] - cor_bot_left[0])
             else:
-                self.h_delta = max(0.0,  right_bottom[0] - cor_rot_right[0])
+                self.h_delta = min(0.0,  right_bottom[0] - cor_top_right[0])
                   
             self.v_delta = min(0.0,  right_bottom[1] - cor_bot_left[1])
 
@@ -125,11 +125,15 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             cor_bot_left = np.array(cor_bot_left) + np.array([self.h_delta, self.v_delta])
             cor_top_right = np.array(cor_top_right) + np.array([self.h_delta, self.v_delta])
             bbox = np.array([cor_bot_left, cor_top_right])
+
+            wing = np.array([left_top_rot, right_top_rot, right_bot_rot, left_bot_rot]) + np.array([self.h_delta, self.v_delta])
+                
         else:
             # bounding box for wing to be returned for drawing
             cor_bot_left = (min(left_top[0], left_bottom[0]), min( left_bottom[1], right_bottom[1] ) )
             cor_top_right = (max( right_top[0], right_bottom[0] ), max(left_top[1], right_top[1] ))            
             bbox = np.array([cor_bot_left, cor_top_right])
+            wing = [left_top, right_top, right_bottom, left_bottom]
 
 
 
@@ -261,7 +265,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             # MOVE UP TO SAFE HEIGHT
             m.gc.fast_move( {'y':m.safe_height,'v':m.safe_height}, ["do_not_normalize", "tail_stock"] )
 
-        return bbox
+        return bbox, wing
 
 
     def calculate_move(self, c1, c2):

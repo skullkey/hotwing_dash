@@ -346,7 +346,7 @@ def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config
             cfg.config.set('Machine','Kerf', "0")
 
         gc_gen = gcode_gen.GcodeGen(cfg, profile_cache)
-        gc, bbox = gc_gen.gen_gcode()
+        gc, bbox, wing_plan = gc_gen.gen_gcode()
         gcode_output = gc.code_as_str
         
         pgc = plotting.ParsedGcode.fromgcode(gc)
@@ -368,7 +368,7 @@ def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config
         gplt = plotting.GcodePlotter(machine_width,machine_height, machine_depth,
                                     panel_offset, panel_width,
                                     panel_bottom, panel_height, 
-                                    panel_inset, panel_depth)
+                                    panel_inset, panel_depth, wing_plan)
         pgc_filtered = pgc.filter_gcode(draw_selection)
 
 

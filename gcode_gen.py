@@ -201,7 +201,7 @@ class GcodeGen():
         inverted = get_config("Wing","Inverted")
 
 
-        bbox = cs.cut(get_config("Wing","HorizontalOffset"), 
+        bbox, wing = cs.cut(get_config("Wing","HorizontalOffset"), 
                vertical_offset_left, 
                vertical_offset_right, 
                vertical_align_profiles,
@@ -211,4 +211,4 @@ class GcodeGen():
 
         machine.gc.normalize()
 
-        return machine.gc, bbox
+        return machine.gc, bbox, wing
