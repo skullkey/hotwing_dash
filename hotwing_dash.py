@@ -346,7 +346,7 @@ def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config
             cfg.config.set('Machine','Kerf', "0")
 
         gc_gen = gcode_gen.GcodeGen(cfg, profile_cache)
-        gc = gc_gen.gen_gcode()
+        gc, bbox = gc_gen.gen_gcode()
         gcode_output = gc.code_as_str
         
         pgc = plotting.ParsedGcode.fromgcode(gc)
@@ -357,6 +357,9 @@ def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config
 
         panel_offset = gc_gen.left_offset
         panel_width = cfg.get_config('Panel',"Width")
+        if panel_width == 0:
+            panel_width = bbox[1,0] - bbox[0,0]
+
         panel_bottom = cfg.get_config('Panel','Bottom')
         panel_height = cfg.get_config('Panel','Height')
         panel_inset = cfg.get_config('Panel','Inset')

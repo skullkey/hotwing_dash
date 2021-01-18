@@ -9,6 +9,7 @@ import datetime
 from importlib import reload
 
 import trailing_cutting_strategy
+reload(trailing_cutting_strategy)
 import config_options
 import gcode_formatter
 import os
@@ -141,12 +142,12 @@ class GcodeGen():
                             rotation_pos=get_config('TipChord',"RotationPosition"),
                             )
 
-        panel = Panel(rib1, rib2, get_config('Panel',"Width"))
+        panel = Panel(rib1, rib2, get_config('Wing',"Width"))
         if side == "right":
             panel = Panel.reverse(panel)
             self.left_offset = root_offset
         else:
-            self.left_offset = get_config('Machine',"Width") -  get_config('Panel',"Width") - root_offset
+            self.left_offset = get_config('Machine',"Width") -  panel.width - root_offset
 
         if panel.width > get_config('Machine',"Width"):
                 raise Exception("Error: Panel (%s) is bigger than the machine width (%s)." % (get_config('Machine',"Width"), panel.width) )
@@ -178,7 +179,6 @@ class GcodeGen():
             prepend = ";" + prepend
         else:
             prepend = None
-
        
 
         machine.gc.gcode_formatter = gcode_formatter.CustomGcodeFormatter(machine.gc,
@@ -201,13 +201,14 @@ class GcodeGen():
         inverted = get_config("Wing","Inverted")
 
 
-        cs.cut(get_config("Wing","HorizontalOffset"), 
+        bbox = cs.cut(get_config("Wing","HorizontalOffset"), 
                vertical_offset_left, 
                vertical_offset_right, 
                vertical_align_profiles,
                dihedral,
-               inverted)
+               inverted, get_config("Wing","RotateWing"),
+               side == "right")
 
         machine.gc.normalize()
 
-        return machine.gc
+        return machine.gc, bbox

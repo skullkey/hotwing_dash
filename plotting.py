@@ -1,7 +1,8 @@
 import numpy as np
 import plotly.graph_objects as go
-from hotwing_core.utils import isect_line_plane_v3
-from operator import itemgetter
+
+
+from utils import argmax,argmin, project_line
 
 
 class ParsedGcode:
@@ -112,14 +113,7 @@ class GcodePlotter():
         ''' Projects the gcode coordinates in X, Y, U & V onto the foam block start (left_offset) and foamblock end (left_offset+panelwidth)
             Used to visualize the wing no the foam block'''
 
-        def project_line(x,y,u,v, width, offset):
-            ''' Projects a line between two 3d coordinates onto a surface at "offset" and returns the 3d coordinates of the point where it intersects'''
-            c1_3d = (0, x, y)
-            c2_3d = (width, u, v)  
-            p_no = (1, 0, 0)
-            position = [offset,0,0]
-            a = isect_line_plane_v3(c1_3d, c2_3d, position, p_no)
-            return a
+
 
         n = len(pgc)
         X1, Y1, U1, V1 = [], [], [], []
@@ -328,11 +322,7 @@ class GcodePlotter():
                 draw_cutting_path = True, draw_foam_block=True, draw_machine_block = True):
         '''returns a plotly figure object visualizing the cut path (optional) and the wing foam paths'''
 
-        def argmin(a):
-            return min(enumerate(a), key=itemgetter(1))[0]
 
-        def argmax(a):
-            return max(enumerate(a), key=itemgetter(1))[0]
 
         stats = {}
         pgcode_wing = self.project_coords(pgcode, self.mbox, self.fbox)

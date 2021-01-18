@@ -36,13 +36,12 @@ class Config():
                 'Panel':{
                                 "RootChordOffset":{"type":float,"required":True},
                                 "TipChordSide":{"type":str, "required":False, "default":"right", "domain":["left","right"]},
-                                "Width":{"type":float,"required":True},
+                                "Width":{"type":float,"required":False,"default":0},
                                 "Bottom":{"type":float,"required":False, "default":0.0},
                                 "Height":{"type":float,"required":True},
                                 "Depth":{"type":float,"required":False, "default":600.0},
                                 "Inset":{"type":float,"required":False, "default":0.0},
-                                "SafeHeight":{"type":float,"required":False, "default":0},
-
+                                "SafeHeight":{"type":float,"required":False, "default":0}
                 },
                  'Wing':{
                                 "HorizontalOffset":{"type":float,"required":False, "default": 0},                    
@@ -54,7 +53,11 @@ class Config():
                                 "StockLeadingEdge":{"type":float,"required":False,"default":0},
                                 "StockTrailingEdge":{"type":float,"required":False,"default":0},
                                 "SheetingTop":{"type":float,"required":False,"default":0},
-                                "SheetingBottom":{"type":float,"required":False,"default":0}                   
+                                "SheetingBottom":{"type":float,"required":False,"default":0},                  
+                                "Width":{"type":float,"required":True},
+                                "RotateWing":{"type":bool,"reqruied":False,"default":False}
+
+
                 },
 
                 'Machine':{
