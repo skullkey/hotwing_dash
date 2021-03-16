@@ -356,9 +356,7 @@ def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config
         machine_depth=cfg.get_config('Machine',"Depth")
 
         panel_offset = gc_gen.left_offset
-        panel_width = cfg.get_config('Panel',"Width")
-        if panel_width == 0:
-            panel_width = bbox[1,0] - bbox[0,0]
+        panel_width = bbox[1,0] - bbox[0,0]
 
         panel_bottom = cfg.get_config('Panel','Bottom')
         panel_height = cfg.get_config('Panel','Height')
@@ -368,7 +366,7 @@ def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config
         gplt = plotting.GcodePlotter(machine_width,machine_height, machine_depth,
                                     panel_offset, panel_width,
                                     panel_bottom, panel_height, 
-                                    panel_inset, panel_depth, wing_plan)
+                                    panel_inset, panel_depth, wing_plan, bbox)
         pgc_filtered = pgc.filter_gcode(draw_selection)
 
 

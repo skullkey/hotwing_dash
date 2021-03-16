@@ -91,13 +91,15 @@ class GcodeBox():
 class GcodePlotter():
     def __init__(self, machine_width, machine_height, machine_depth, 
                       foam_left_offset, foam_width, foam_bottom_offset, foam_height, foam_depth_offset, foam_depth,
-                      wing_plan):
+                      wing_plan, bbox):
         # box representing the bounds of the machine
         self.mbox = GcodeBox(0, machine_width, 0, machine_height, 0, machine_depth)
         # box representing the bounds of the foam block
         self.fbox = GcodeBox(foam_left_offset, foam_width, foam_bottom_offset, foam_height, foam_depth_offset, foam_depth)
         # coordinates of the wing in plan [left_top, right_top, right_bottom, left_bottom]
         self.wing_plan = wing_plan
+        # boudning box [bottom_left, top_right]
+        self.bbox = bbox
 
     
     def setup_fig(self, fig):
@@ -398,13 +400,16 @@ class GcodePlotter():
 
         # draw the wing profile
 
-        # bottom left from projection
+        # left from projection
         x0 = float(self.fbox.left)
+        delta_x = 0 
+
+
+        # bottom from projection
         y0 = float(min(pgcode_wing.round_X))
 
-        # bottom left from wingplan
+        # bottom  from wingplan
         bl = self.wing_plan[-1]
-        delta_x = 0 #bl[0] - x0
         delta_y = bl[1] - y0
 
         # overlay the wing plan on the projected location

@@ -60,7 +60,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
                 vertical_offset_right = vertical_offset_left + mult * width * math.sin(math.pi/180*dihedral)
             elif vertical_offset_left is None:
                 width = m.panel.width
-                vertical_offset_left = vertical_offset_right - mult * width * math.sin(math.pi/180*dihedral)
+                vertical_offset_left = vertical_offset_right + mult * width * math.sin(math.pi/180*dihedral)
 
 
  
