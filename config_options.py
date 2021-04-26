@@ -34,27 +34,30 @@ class Config():
                                 "RotationPosition":{"type":float,"required":False,"default":0}
                 },
                 'Panel':{
-                                "RootChordOffset":{"type":float,"required":True},
-                                "TipChordSide":{"type":str, "required":False, "default":"right", "domain":["left","right"]},
-                                "Width":{"type":float,"required":True},
                                 "Bottom":{"type":float,"required":False, "default":0.0},
                                 "Height":{"type":float,"required":True},
                                 "Depth":{"type":float,"required":False, "default":600.0},
                                 "Inset":{"type":float,"required":False, "default":0.0},
-                                "SafeHeight":{"type":float,"required":False, "default":0},
-
+                                "SafeHeight":{"type":float,"required":False, "default":0}
                 },
                  'Wing':{
-                                "HorizontalOffset":{"type":float,"required":False, "default": 0},                    
-                                "VerticalOffsetRoot":{"type":float,"required":False, "default": 25},                    
-                                "VerticalOffsetTip":{"type":float,"required":False, "default": None},                    
+                                "TipChordSide":{"type":str, "required":False, "default":"right", "domain":["left","right"]},
+                                "Width":{"type":float,"required":True},
+
                                 "Inverted":{"type":bool, "required":False, "default":False},
                                 "Dihedral":{"type":float,"required":False, "default":0.0},
                                 "VerticalAlignProfiles":{"type":str,"required":False, "default": "default", "domain":["default","bottom","dihedral"]}, 
                                 "StockLeadingEdge":{"type":float,"required":False,"default":0},
                                 "StockTrailingEdge":{"type":float,"required":False,"default":0},
                                 "SheetingTop":{"type":float,"required":False,"default":0},
-                                "SheetingBottom":{"type":float,"required":False,"default":0}                   
+                                "SheetingBottom":{"type":float,"required":False,"default":0},                  
+                },
+                'Placement':{
+                                "RootChordOffset":{"type":float,"required":True},
+                                "HorizontalOffset":{"type":float,"required":False, "default": 0},                    
+                                "VerticalOffsetRoot":{"type":float,"required":False, "default": 25},                    
+                                "VerticalOffsetTip":{"type":float,"required":False, "default": None},                    
+                                "RotateWing":{"type":bool,"reqruied":False,"default":False}
                 },
 
                 'Machine':{

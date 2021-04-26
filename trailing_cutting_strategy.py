@@ -3,14 +3,20 @@ from hotwing_core.profile import Profile
 from hotwing_core.panel import Panel
 from hotwing_core.coordinate import Coordinate
 from hotwing_core.cutting_strategies.base import CuttingStrategyBase
+import utils
 import math
+import numpy as np
 
 
 class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
     """
     Trailing edge first cutting strategy
     """
-    def cut(self, horizontal_offset, vertical_offset_left = 0, vertical_offset_right = None,   vertical_align_profiles = "default", dihedral = 0.0, inverted = False):
+    def cut(self, horizontal_offset, vertical_offset_left = 0, 
+                vertical_offset_right = None,   vertical_align_profiles = "default",  
+                dihedral = 0.0, inverted = False, rotate=False, fix_left_offset = None):
+
+ 
         m = self.machine
         dwell_time = 1
         le_offset = 1
@@ -54,7 +60,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
                 vertical_offset_right = vertical_offset_left + mult * width * math.sin(math.pi/180*dihedral)
             elif vertical_offset_left is None:
                 width = m.panel.width
-                vertical_offset_left = vertical_offset_right - mult * width * math.sin(math.pi/180*dihedral)
+                vertical_offset_left = vertical_offset_right + mult * width * math.sin(math.pi/180*dihedral)
 
 
  
@@ -75,6 +81,62 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
 
 
 
+        # Rotate the wing to make the trailing edge parallel with the start of the foam block
+        # Useful for swept back wings
+        self.rotate = rotate
+
+        # define the extremes of the wing
+        left_top = (m.left_offset, profile1.right_midpoint.x)
+        right_top = (m.left_offset + m.panel.width, profile2.right_midpoint.x)
+        left_bottom = (m.left_offset, profile1.left_midpoint.x)
+        right_bottom = (m.left_offset + m.panel.width, profile2.left_midpoint.x )
+
+
+        if self.rotate:
+            # first calculate the angle
+            vertical_diff = profile1.left_midpoint.x - profile2.left_midpoint.x
+            horizontal_diff = m.panel.width
+            self.angle = math.atan2(vertical_diff, horizontal_diff) * 180 / math.pi
+
+            
+            #always rotate around left_bottom
+            self.origin = left_bottom
+            left_top_rot, right_top_rot, left_bot_rot, right_bot_rot = \
+                      utils.rotate([left_top, right_top, left_bottom, right_bottom],
+                      self.origin, self.angle)
+
+
+            # calculate the horizontal and vertical offset needed 
+            # to retain the panel & wing parameters (e.g. offset and HorizontalOffset)
+            
+            # 1. calculate a bounding box after rotation
+            cor_bot_left = (min(left_top_rot[0], left_bot_rot[0]), min( left_bot_rot[1], right_bot_rot[1] ) )
+            cor_top_right = (max( right_top_rot[0], right_bot_rot[0] ), max(left_top_rot[1], right_top_rot[1] ))
+
+            # 2. now calculate horizontal and vertical deltas - depends on which side the root chord is
+            if fix_left_offset:
+                self.h_delta = max(0.0, left_bottom[0] - cor_bot_left[0])
+            else:
+                self.h_delta = min(0.0,  right_bottom[0] - cor_top_right[0])
+                  
+            self.v_delta = min(0.0,  right_bottom[1] - cor_bot_left[1])
+
+            # 3. Return bounding box for drawing
+            cor_bot_left = np.array(cor_bot_left) + np.array([self.h_delta, self.v_delta])
+            cor_top_right = np.array(cor_top_right) + np.array([self.h_delta, self.v_delta])
+            bbox = np.array([cor_bot_left, cor_top_right])
+
+            wing = np.array([left_top_rot, right_top_rot, right_bot_rot, left_bot_rot]) + np.array([self.h_delta, self.v_delta])
+                
+        else:
+            # bounding box for wing to be returned for drawing
+            cor_bot_left = (min(left_top[0], left_bottom[0]), min( left_bottom[1], right_bottom[1] ) )
+            cor_top_right = (max( right_top[0], right_bottom[0] ), max(left_top[1], right_top[1] ))            
+            bbox = np.array([cor_bot_left, cor_top_right])
+            wing = [left_top, right_top, right_bottom, left_bottom]
+
+
+
 
 
         # Trim the overlap
@@ -85,7 +147,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
         self._move_to_safe_height()
 
         # calc te offset pos
-        pos = m.calculate_move(
+        pos = self.calculate_move(
                 profile1.left_midpoint - Coordinate(te_offset, 0),
                 profile2.left_midpoint- Coordinate(te_offset, 0))
 
@@ -100,7 +162,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
         self.machine.gc.dwell(dwell_time)
 
         # CUT INWARDS TO TRAILING EDGE
-        m.gc.move(m.calculate_move(profile1.left_midpoint, profile2.left_midpoint), ['initial_move'])
+        m.gc.move(self.calculate_move(profile1.left_midpoint, profile2.left_midpoint), ['initial_move'])
         self.machine.gc.dwell(dwell_time)
 
         # CUT THE TOP PROFILE
@@ -108,7 +170,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
 
         # CUT TO LEADING EDGE AT MIDDLE OF PROFILE
         m.gc.move(
-            m.calculate_move(
+            self.calculate_move(
                 profile1.right_midpoint,
                 profile2.right_midpoint)
         , ['profile'])
@@ -116,7 +178,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
 
         # CUT TO LEADING EDGE OFFSET
         m.gc.move(
-            m.calculate_move(
+            self.calculate_move(
                 profile1.right_midpoint + Coordinate(te_offset,0),
                 profile2.right_midpoint + Coordinate(te_offset,0)),
                 ['profile']
@@ -125,7 +187,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
 
         # CUT TO LEADING EDGE AT MIDDLE OF PROFILE
         m.gc.move(
-            m.calculate_move(
+            self.calculate_move(
                 profile1.right_midpoint,
                 profile2.right_midpoint),
             ['profile']
@@ -135,11 +197,11 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
         self._cut_bottom_profile(profile1, profile2, dwell_time, ['profile'])
 
         # CUT TO TRAILING EDGE
-        m.gc.move(m.calculate_move(profile1.left_midpoint, profile2.left_midpoint), ['profile'])
+        m.gc.move(self.calculate_move(profile1.left_midpoint, profile2.left_midpoint), ['profile'])
 
         # CUT TO TRAILING EDGE OFFSET
         m.gc.move(
-            m.calculate_move(
+            self.calculate_move(
                 profile1.left_midpoint - Coordinate(le_offset,0),
                 profile2.left_midpoint - Coordinate(le_offset,0)), ['profile']
         )
@@ -158,7 +220,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             r1_stock = m.panel.left_rib.front_stock
             r2_stock = m.panel.right_rib.front_stock
             
-            ts_pos = m.calculate_move(
+            ts_pos = self.calculate_move(
                 Coordinate(profile1.right_midpoint.x - r1_stock + m.kerf[0],0),
                 Coordinate(profile2.right_midpoint.x - r2_stock + m.kerf[1],0)
             )
@@ -183,7 +245,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             r1_stock = self.machine.panel.left_rib.tail_stock
             r2_stock = self.machine.panel.right_rib.tail_stock
 
-            fs_pos = m.calculate_move(
+            fs_pos = self.calculate_move(
                 Coordinate(profile1.left_midpoint.x + r1_stock - m.kerf[0],0),
                 Coordinate(profile2.left_midpoint.x + r2_stock - m.kerf[1],0)
             )
@@ -203,8 +265,38 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             # MOVE UP TO SAFE HEIGHT
             m.gc.fast_move( {'y':m.safe_height,'v':m.safe_height}, ["do_not_normalize", "tail_stock"] )
 
+        return bbox, wing
 
 
+    def calculate_move(self, c1, c2):
+        """
+        Create the XYUV positions for the machine in order to intersect two Coordinates.
+
+        Args:
+            c1 (Coordinate):
+            c2 (Coordinate):
+
+        Returns:
+            Dict: {"x":1.1,"y":1.1,"u":1.1,"v":1.1}
+        """
+
+        # create 3d coordinates and pass them to the 
+        m = self.machine
+        c1_3d = (0 + m.left_offset, c1.x, c1.y)
+        c2_3d = (m.panel.width + m.left_offset, c2.x, c2.y)
+
+        if self.rotate:
+            c1_2d, c2_2d = utils.rotate([c1_3d[:2],c2_3d[:2]], self.origin, self.angle)
+
+            c1_2d += np.array([self.h_delta, self.v_delta])
+            c2_2d += np.array([self.h_delta, self.v_delta])
+
+            c1_3d = np.append(c1_2d, c1_3d[2])
+            c2_3d = np.append(c2_2d, c2_3d[2])
+
+        pos = m._calc_machine_position(c1_3d, c2_3d)
+
+        return {"x":pos[0][0],"y":pos[0][1],"u":pos[1][0],"v":pos[1][1]}
 
     def _cut_top_profile(self, profile1, profile2, dwell_time, options=[]):
         # cut top profile
@@ -222,13 +314,13 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             pct = i / self.machine.profile_points
             c1 = profile1.top.interpolate_around_profile_dist_pct(pct)
             c2 = profile2.top.interpolate_around_profile_dist_pct(pct)
-            self.machine.gc.move(self.machine.calculate_move(c1, c2), options)
+            self.machine.gc.move(self.calculate_move(c1, c2), options)
             if i == 0:
                 # dwell on first point
                 self.machine.gc.dwell(dwell_time)
 
         # cut to last point
-        self.machine.gc.move(self.machine.calculate_move(profile1.top.coordinates[-1],
+        self.machine.gc.move(self.calculate_move(profile1.top.coordinates[-1],
                                                         profile2.top.coordinates[-1]), options)
         self.machine.gc.dwell(dwell_time)
 
@@ -247,7 +339,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             pct = i / self.machine.profile_points
             c1 = profile1.bottom.interpolate_around_profile_dist_pct(pct)
             c2 = profile2.bottom.interpolate_around_profile_dist_pct(pct)
-            self.machine.gc.move(self.machine.calculate_move(c1, c2), options)
+            self.machine.gc.move(self.calculate_move(c1, c2), options)
             if i == self.machine.profile_points:
                 # dwell on first point
                 self.machine.gc.dwell(dwell_time)

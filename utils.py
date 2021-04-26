@@ -1,6 +1,11 @@
 import unicodedata
 import string
 import dash_html_components as html
+from hotwing_core.utils import isect_line_plane_v3
+from operator import itemgetter
+import math
+import numpy as np
+
 
 validFilenameChars = "-_.()%s%s" % (string.ascii_letters, string.digits)
 
@@ -18,3 +23,28 @@ def list_to_html(input_list):
         [html.Li(s) for s in input_list]
     )
     return result
+
+
+def argmin(a):
+    return min(enumerate(a), key=itemgetter(1))[0]
+
+def argmax(a):
+    return max(enumerate(a), key=itemgetter(1))[0]
+
+
+def project_line(x,y,u,v, width, offset):
+    ''' Projects a line between two 3d coordinates onto a surface at "offset" and returns the 3d coordinates of the point where it intersects'''
+    c1_3d = (0, x, y)
+    c2_3d = (width, u, v)  
+    p_no = (1, 0, 0)
+    position = [offset,0,0]
+    a = isect_line_plane_v3(c1_3d, c2_3d, position, p_no)
+    return a
+
+def rotate(p, origin=(0, 0), degrees=0):
+    angle = np.deg2rad(degrees)
+    R = np.array([[np.cos(angle), -np.sin(angle)],
+                  [np.sin(angle),  np.cos(angle)]])
+    o = np.atleast_2d(origin)
+    p = np.atleast_2d(p)
+    return np.squeeze((R @ (p.T-o.T) + o.T).T)

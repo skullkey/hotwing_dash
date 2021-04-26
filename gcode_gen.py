@@ -9,6 +9,7 @@ import datetime
 from importlib import reload
 
 import trailing_cutting_strategy
+reload(trailing_cutting_strategy)
 import config_options
 import gcode_formatter
 import os
@@ -111,8 +112,8 @@ class GcodeGen():
 
     def gen_gcode(self):
         get_config = self.config.get_config
-        root_offset =  get_config('Panel','RootChordOffset')
-        side = get_config('Panel','TipChordSide')
+        root_offset =  get_config('Placement','RootChordOffset')
+        side = get_config('Wing','TipChordSide')
 
         root_profile_filename = self.pcache.get_profile_filename(get_config('RootChord',"Profile"))
 
@@ -141,12 +142,12 @@ class GcodeGen():
                             rotation_pos=get_config('TipChord',"RotationPosition"),
                             )
 
-        panel = Panel(rib1, rib2, get_config('Panel',"Width"))
+        panel = Panel(rib1, rib2, get_config('Wing',"Width"))
         if side == "right":
             panel = Panel.reverse(panel)
             self.left_offset = root_offset
         else:
-            self.left_offset = get_config('Machine',"Width") -  get_config('Panel',"Width") - root_offset
+            self.left_offset = get_config('Machine',"Width") -  panel.width - root_offset
 
         if panel.width > get_config('Machine',"Width"):
                 raise Exception("Error: Panel (%s) is bigger than the machine width (%s)." % (get_config('Machine',"Width"), panel.width) )
@@ -178,7 +179,6 @@ class GcodeGen():
             prepend = ";" + prepend
         else:
             prepend = None
-
        
 
         machine.gc.gcode_formatter = gcode_formatter.CustomGcodeFormatter(machine.gc,
@@ -190,24 +190,27 @@ class GcodeGen():
         cs = trailing_cutting_strategy.TrailingEdgeCuttingStrategy(machine)
 
         if side == "right":
-            vertical_offset_left = get_config("Wing","VerticalOffsetRoot")
-            vertical_offset_right = get_config("Wing","VerticalOffsetTip")
+            vertical_offset_left = get_config("Placement","VerticalOffsetRoot")
+            vertical_offset_right = get_config("Placement","VerticalOffsetTip")
         else:
-            vertical_offset_left = get_config("Wing","VerticalOffsetTip")
-            vertical_offset_right = get_config("Wing","VerticalOffsetRoot")
+            vertical_offset_left = get_config("Placement","VerticalOffsetTip")
+            vertical_offset_right = get_config("Placement","VerticalOffsetRoot")
 
         vertical_align_profiles = get_config("Wing","VerticalAlignProfiles")
         dihedral = get_config("Wing","Dihedral")
         inverted = get_config("Wing","Inverted")
 
 
-        cs.cut(get_config("Wing","HorizontalOffset"), 
+        bbox, wing = cs.cut(get_config("Placement","HorizontalOffset"), 
                vertical_offset_left, 
                vertical_offset_right, 
                vertical_align_profiles,
                dihedral,
-               inverted)
+               inverted, get_config("Placement","RotateWing"),
+               side == "right")
 
         machine.gc.normalize()
 
-        return machine.gc
+        self.left_offset = bbox[0,0]
+
+        return machine.gc, bbox, wing
