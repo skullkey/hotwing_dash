@@ -52,9 +52,6 @@ class CustomGcodeFormatter(GcodeFormatterBase):
         if self.prepend is not None:
             out.extend(self.prepend.split("\n"))
 
-        # Set feedrate
-        out.append("F%s" % self.parent.feedrate)
-
         ## Working Plane
         out.append("G17") # is this necessary?
 
@@ -83,6 +80,9 @@ class CustomGcodeFormatter(GcodeFormatterBase):
 
         if self.hotwire_on is not None:
             out.append(self.hotwire_on)
+
+        # Set feedrate
+        out.append("G1 F%s" % self.parent.feedrate)
 
         return out
 

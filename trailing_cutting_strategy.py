@@ -265,6 +265,9 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             # MOVE UP TO SAFE HEIGHT
             m.gc.fast_move( {'y':m.safe_height,'v':m.safe_height}, ["do_not_normalize", "tail_stock"] )
 
+        m.gc.fast_move( {'x':0,'u':0}, ["do_not_normalize", "final"] )
+        m.gc.fast_move( {'y':0,'v':0}, ["do_not_normalize", "final"] )
+        
         return bbox, wing
 
 

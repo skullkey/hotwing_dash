@@ -60,6 +60,7 @@ inline_checklist = dbc.FormGroup(
                             {"label": "Pre-Stock", "value": "done_profile"},
                             {"label": "Front Stock", "value": "front_stock"},
                             {"label": "Tail Stock", "value": "tail_stock"},
+                            {"label": "Final", "value": "final"},
                             {"label": "With Kerf", "value": "kerf"},
                             {"label": "3D", "value": "3d"},
                             {"label": "Full Screen", "value": "full_screen"},
@@ -340,7 +341,7 @@ def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config
             output_error_msg = dbc.Alert(err_msg, color="danger")
             raise Exception("Validation Failed")
             
-
+        # remove the kerf by setting to zero to visualize the profiles
         if "kerf" not in draw_selection:
             old_kerf = cfg.get_config('Machine','Kerf')
             cfg.config.set('Machine','Kerf', "0")
@@ -458,6 +459,13 @@ def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config
         fig_plan.update_layout(legend=dict(
             orientation="h"
         ))
+
+        # put old kerf back to make sure gcode in output box contains the right kerf setting
+        if "kerf" not in draw_selection:
+            cfg.config.set('Machine','Kerf', old_kerf)
+            gc_gen = gcode_gen.GcodeGen(cfg, profile_cache)
+            gc, _, _ = gc_gen.gen_gcode()
+            gcode_output = gc.code_as_str
   
     except Exception as e:
         traceback.print_exc()
