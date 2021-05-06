@@ -33,6 +33,22 @@ python hotwing_dash.py
 
 Or more production setup using Heroku, Elastic Bean Stalk or roll your own using uWSGI, gunicorn and nginx
 
+# Demo
+
+Short demo clip hosted on youtube:
+
+[![Watch the video](https://img.youtube.com/vi/qW-kdw4vMnI/maxresdefault.jpg)](https://youtu.be/qW-kdw4vMnI)
+
+
+# Example
+
+Two wings JW36's cut using Hotwing Dash
+
+![Mini-JW](static/minijw.jpeg)
+
+
+
+
 # Config Editor
 
 To define the configuration of a wing, either select "new" or "upload" from the **Generate** tab.  Suggest starting with "new" to get a sense of the options available.
