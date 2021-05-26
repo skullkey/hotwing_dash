@@ -207,7 +207,7 @@ class GcodeGen():
                vertical_align_profiles,
                dihedral,
                inverted, get_config("Placement","RotateWing"),
-               side == "right")
+               side == "right", get_config("Wing","StockTrailingEdgeAngle"))
 
         machine.gc.normalize()
 

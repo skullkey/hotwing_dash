@@ -60,6 +60,7 @@ inline_checklist = dbc.FormGroup(
                             {"label": "Pre-Stock", "value": "done_profile"},
                             {"label": "Front Stock", "value": "front_stock"},
                             {"label": "Tail Stock", "value": "tail_stock"},
+                       
                             #{"label": "Final", "value": "final"},
                             {"label": "With Kerf", "value": "kerf"},
                             {"label": "3D", "value": "3d"},

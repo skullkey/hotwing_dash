@@ -49,6 +49,8 @@ class Config():
                                 "VerticalAlignProfiles":{"type":str,"required":False, "default": "default", "domain":["default","bottom","dihedral"]}, 
                                 "StockLeadingEdge":{"type":float,"required":False,"default":0},
                                 "StockTrailingEdge":{"type":float,"required":False,"default":0},
+                                "StockTrailingEdgeAngle":{"type":float,"required":False,"default":0},
+
                                 "SheetingTop":{"type":float,"required":False,"default":0},
                                 "SheetingBottom":{"type":float,"required":False,"default":0},                  
                 },

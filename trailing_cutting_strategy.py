@@ -14,7 +14,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
     """
     def cut(self, horizontal_offset, vertical_offset_left = 0, 
                 vertical_offset_right = None,   vertical_align_profiles = "default",  
-                dihedral = 0.0, inverted = False, rotate=False, fix_left_offset = None):
+                dihedral = 0.0, inverted = False, rotate=False, fix_left_offset = None, tail_stock_angle=0):
 
  
         m = self.machine
@@ -47,6 +47,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
                 vertical_offset_right = vertical_offset_left
             elif vertical_offset_left is None :
                 vertical_offset_left = vertical_offset_right
+
         elif vertical_align_profiles == "bottom":
             left_profile_bottom = profile1.bottom.bounds[0].y
             right_profile_bottom = profile2.bottom.bounds[0].y
@@ -54,6 +55,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
                 vertical_offset_right = vertical_offset_left + mult * (left_profile_bottom - right_profile_bottom)
             elif vertical_offset_left is None :
                 vertical_offset_left = vertical_offset_right + mult * (right_profile_bottom - left_profile_bottom)
+
         elif vertical_align_profiles == "dihedral":
             if vertical_offset_right is None:
                 width = m.panel.width
@@ -245,22 +247,38 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             r1_stock = self.machine.panel.left_rib.tail_stock
             r2_stock = self.machine.panel.right_rib.tail_stock
 
+            angle = tail_stock_angle
+
+
+            angle_top_offset1 = (m.foam_height*1.1 - profile1.left_midpoint.y)* math.tan(math.pi/180*angle)
+            angle_top_offset2 = (m.foam_height*1.1 - profile2.left_midpoint.y)* math.tan(math.pi/180*angle)
+            angle_bottom_offset1 = (profile1.left_midpoint.y) * math.tan(math.pi/180*angle)
+            angle_bottom_offset2 = (profile2.left_midpoint.y) * math.tan(math.pi/180*angle)
+
+
             fs_pos = self.calculate_move(
-                Coordinate(profile1.left_midpoint.x + r1_stock - m.kerf[0],0),
-                Coordinate(profile2.left_midpoint.x + r2_stock - m.kerf[1],0)
+                Coordinate(profile1.left_midpoint.x + r1_stock - m.kerf[0] - angle_top_offset1,0),
+                Coordinate(profile2.left_midpoint.x + r2_stock - m.kerf[1] - angle_top_offset2,0)
             )
+
+            fs_pos_bot = self.calculate_move(
+                Coordinate(profile1.left_midpoint.x + r1_stock - m.kerf[0] + angle_bottom_offset1,0),
+                Coordinate(profile2.left_midpoint.x + r2_stock - m.kerf[1] + angle_bottom_offset2,0)
+            )
+
 
             # MOVE HORIZONTALLY TO ABOVE TAIL STOCK
             m.gc.fast_move({'x':fs_pos['x'],'u':fs_pos['u']}, ['tail_stock'] )
 
             # MOVE DOWN TO JUST ABOVE FOAM
-            m.gc.fast_move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize", "tail_stock"] )
+            m.gc.fast_move( {'y':m.foam_height,'v':m.foam_height}, ["do_not_normalize", "tail_stock"] )
 
             # CUT DOWN TO 0 HEIGHT
-            m.gc.move( {'y':0,'v':0}, ["do_not_normalize", "tail_stock"] )
+            m.gc.move( {'y':0,'v':0,'x':fs_pos_bot['x'], 'u':fs_pos_bot['u']}, [ "tail_stock"] )
 
             # CUT UP TO JUST ABOVE FOAM
-            m.gc.move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize", "tail_stock"] )
+            m.gc.move( {'y':m.foam_height,'v':m.foam_height, 'x':fs_pos['x'],'u':fs_pos['u']}, [ "tail_stock"] )
+            m.gc.fast_move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize", "tail_stock"] )
 
             # MOVE UP TO SAFE HEIGHT
             m.gc.fast_move( {'y':m.safe_height,'v':m.safe_height}, ["do_not_normalize", "tail_stock"] )
