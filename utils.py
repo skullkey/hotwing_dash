@@ -48,3 +48,14 @@ def rotate(p, origin=(0, 0), degrees=0):
     o = np.atleast_2d(origin)
     p = np.atleast_2d(p)
     return np.squeeze((R @ (p.T-o.T) + o.T).T)
+
+
+def prep_file_for_saving(input_str):
+    lines = input_str.split("\n")
+    result = "\n;".join(lines)
+    return ";" + result
+
+
+def parse_uploaded(input_str):
+    lines = input_str.split("\n")
+    return "\n".join([l[1:] for l in lines if l.startswith(";") and not l.startswith(";Generated")])

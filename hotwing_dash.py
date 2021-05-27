@@ -51,6 +51,8 @@ app = dash.Dash(__name__,
                 title="Hotwing-Dash"
                 )
 
+
+default_check_list = ["profile"] 
 inline_checklist = dbc.FormGroup(
                 [
                     dbc.Checklist(
@@ -68,7 +70,7 @@ inline_checklist = dbc.FormGroup(
 
 
                         ],
-                        value=["profile"],
+                        value=default_check_list,
                         id="checklist-input",
                         inline=True,
                     ),
@@ -251,8 +253,8 @@ def save_config(n_nlicks, config_input):
     pn = cfg.get_config("Project","Name")
     filename = removeDisallowedFilenameChars(pn)
 
-    
-    return dict(content=config_input, filename=filename)
+    prepped_content = prep_file_for_saving(config_input)
+    return dict(content=prepped_content, filename=filename)
 
 
 @app.callback(Output("download-gcode", "data"), 
@@ -271,7 +273,8 @@ def save_config(n_nlicks, gcode_input):
 
 @app.callback([Output("file_open_div","style"), 
                 Output("gen_div","style"), 
-                Output('input', 'value')], 
+                Output('input', 'value'),
+                Output("checklist-input", "value") ], 
                 [Input("new-config","n_clicks"), 
                 Input("confirm","submit_n_clicks"),
                 Input('upload-data',"contents")])
@@ -283,19 +286,20 @@ def update_main_content(n_clicks_new, n_clicks_close, contents):
     
     if not ctx.triggered:
         button_id = None
-        return show,hide,""
+        return show,hide,"", default_check_list
     else:
         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
         if button_id == "new-config":
-            return hide, show, config_template
+            return hide, show, config_template, default_check_list
         elif button_id == "close-button-state":
-            return show, hide, ""
+            return show, hide, "", default_check_list
         elif button_id == "upload-data":
             content_type, content_string = contents.split(',')
             decoded = base64.b64decode(content_string).decode()
-            return  hide, show, decoded
+            prepped = parse_uploaded(decoded)
+            return  hide, show, prepped, default_check_list
 
-    return show, hide, ""
+    return show, hide, "", default_check_list
 
 
 @app.callback(Output('confirm', 'displayed'),
@@ -338,7 +342,10 @@ def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config
     try:
         validation = cfg.read_string(config_input)
         if validation:
-            err_msg = list_to_html(validation)
+            if config_input == "":
+                err_msg = ""
+            else:
+                err_msg = list_to_html(validation)
             output_error_msg = dbc.Alert(err_msg, color="danger")
             raise Exception("Validation Failed")
             
