@@ -81,6 +81,10 @@ inline_checklist = dbc.FormGroup(
 
 main_tab_layout = html.Div(id = "main-content")
 
+
+with open("gallery.md") as f:
+    gallery_md = f.read()
+
 file_open_layout = html.Div([
     dbc.Row([
         dbc.Col(
@@ -106,7 +110,17 @@ file_open_layout = html.Div([
                 ])
             )
         )
-    ])
+    ]),
+
+   dbc.Row([
+        dbc.Col(
+            dbc.Card(
+                dbc.CardBody([
+                    dcc.Markdown(gallery_md, dangerously_allow_html=True)
+                ])
+            )
+        )
+    ]) 
 ], id='file_open_div')
 
 
