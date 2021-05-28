@@ -82,8 +82,6 @@ inline_checklist = dbc.FormGroup(
 main_tab_layout = html.Div(id = "main-content")
 
 
-with open("gallery.md") as f:
-    gallery_md = f.read()
 
 file_open_layout = html.Div([
     dbc.Row([
@@ -112,15 +110,7 @@ file_open_layout = html.Div([
         )
     ]),
 
-   dbc.Row([
-        dbc.Col(
-            dbc.Card(
-                dbc.CardBody([
-                    dcc.Markdown(gallery_md, dangerously_allow_html=True)
-                ])
-            )
-        )
-    ]) 
+  
 ], id='file_open_div')
 
 
@@ -222,6 +212,25 @@ info_tab_layout = html.Div([
     ])
 ])
 
+
+with open("gallery.md") as f:
+    gallery_md = f.read()
+
+gallery_tab_layout = html.Div([
+    dbc.Row([
+        dbc.Col(
+            dbc.Card(
+                dbc.CardBody([
+                    dcc.Markdown(gallery_md, dangerously_allow_html=True)
+                ])
+            )
+        )
+    ])
+])
+
+
+
+
 gcode_tab_layout = html.Div([
     dbc.Button(id='save-gcode-button', n_clicks=0, children='Download', color="success", className="mr-2"),
     Download(id="download-gcode"),
@@ -256,6 +265,7 @@ app.layout = dbc.Tabs([
     dbc.Tab(info_tab_layout, label="Info"),
     dbc.Tab(main_tab_layout, label="Generate"),
     dbc.Tab(gcode_tab_layout, label="GCode"),
+    dbc.Tab(gallery_tab_layout, label="Gallery"),
 
 ])
 

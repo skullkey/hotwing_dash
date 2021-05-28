@@ -1,5 +1,7 @@
 # Mini JW
 ![Mini-JW](static/gallery/minijw.jpeg)
+![Mini-JW](static/gallery/jw36_glass.jpg)
+
 
 EPS Gcode:
 * [Left Wing](static/gallery/JW36_left.gcode)
