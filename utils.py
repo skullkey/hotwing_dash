@@ -59,3 +59,10 @@ def prep_file_for_saving(input_str):
 def parse_uploaded(input_str):
     lines = input_str.split("\n")
     return "\n".join([l[1:] for l in lines if l.startswith(";") and not l.startswith(";Generated")])
+
+
+def get_temp_filename(folder):
+    import tempfile
+    with tempfile.NamedTemporaryFile(dir=folder, delete=False) as tmpfile:
+        temp_file_name = tmpfile.name
+    return temp_file_name

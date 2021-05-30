@@ -20,6 +20,9 @@ from flask import request
 server = flask.Flask(__name__)
 CORS(server)
 
+from werkzeug.utils import secure_filename
+import os
+UPLOAD_FOLDER = "/tmp"
 
 import unicodedata
 import string
@@ -31,6 +34,11 @@ import traceback
 
 from utils import *
 from dash.exceptions import PreventUpdate
+
+import ezdxf
+import dxf_parser
+import plotly.graph_objects as go
+import utils
 
 
 cfg = config_options.Config()
@@ -259,6 +267,143 @@ gcode_tab_layout = html.Div([
 
 ])
 
+dxf2gcode_tab_layout = html.Div([
+
+    dbc.Row([
+        dbc.Col([
+            dcc.Upload(id='d2g-upload-data',
+                        children=html.Div([
+                            'Drag and Drop or ',
+                            html.A('Select Files')
+                        ]),
+                        style={
+                            'width': '100%',
+                            'height': '60px',
+                            'lineHeight': '60px',
+                            'borderWidth': '1px',
+                            'borderStyle': 'dashed',
+                            'borderRadius': '5px',
+                            'textAlign': 'center',
+                            'margin': '10px'
+                        },)
+
+        ])
+
+
+    ]),
+
+    dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardHeader("Profile",id="g2g-profile-header"),
+                dbc.CardBody(
+                    html.Div([dcc.Graph(id='d2g_graph_profile', config={'displayModeBar': False}),
+                        ])
+                )
+            ]),
+        ], className="col-12",id="d2g-chart-card"),
+    ]),
+
+    dbc.Row([
+        dbc.Col(['Filename',
+            dbc.Input(id="uploaded-filename", className="mr-2",type='text',disabled = True, value=''),
+            #"Starting Position",
+            #dbc.Input(id="d2g-starting", className="mr-2",     placeholder='Select a starting point for the cut...',  type='text',  value='', disabled=True),
+            'X-Offset',
+            dbc.Input(id="d2g-x-offset", className="mr-2", type='number', value=0),
+            'Y-Offset',
+            dbc.Input(id="d2g-y-offset", className="mr-2", type='number', value=0),
+            'Four Axes',
+            dcc.RadioItems(id='d2g-four-axes',
+                options=[
+                    {'label': 'XY', 'value': '2'},
+                    {'label': 'XYZAB', 'value': '4'},
+                ],
+                value='4',
+                labelStyle={'display': 'inline-block'}
+            ) , 
+            'Feedrate',
+            dbc.Input(id="d2g-feedrate", className="mr-2", type='number', value=160),
+            'PWM',
+            dbc.Input(id="d2g-pwm", className="mr-2", type='number', value=60),
+
+
+
+            dbc.Button(id='d2g-submit-button', n_clicks=0, children='Update', color="primary", className="mr-2"),
+            dbc.Button(id='d2g-download-button', n_clicks=0, children='Download', color="success", className="mr-2"),
+            dbc.Input(id="d2g-filename", type='hidden', value=''),
+
+            dcc.Download(id="download-d2g-gcode")
+
+
+        ], className='col-3')
+
+    ])
+], id="d2g_gen_div")
+
+@app.callback([Output("d2g_graph_profile", "figure"), Output("d2g-filename","value"), Output('uploaded-filename','value')], 
+              [Input('d2g-upload-data',"contents"), Input('d2g-submit-button','n_clicks'),  ],
+              [State('d2g-x-offset','value'), State('d2g-y-offset','value'), State('d2g-filename','value'), State('d2g-upload-data', 'filename'),])
+def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename):
+
+    ctx = dash.callback_context
+
+
+
+
+    if not ctx.triggered:
+        button_id = None
+        return "","",""
+    else:
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+        if button_id == "d2g-upload-data":
+            content_type, content_string = contents.split(',')
+            decoded = base64.b64decode(content_string)
+            stored_filename = utils.get_temp_filename(UPLOAD_FOLDER)
+            stored_filename = os.path.join(UPLOAD_FOLDER, secure_filename(stored_filename))
+            with open(stored_filename, "wb") as f:
+                f.write(decoded)
+            doc = ezdxf.readfile(stored_filename)
+            dxfp = dxf_parser.DxfToGCode(doc)
+
+        else:
+            doc = ezdxf.readfile(stored_filename)
+            dxfp = dxf_parser.DxfToGCode(doc)
+
+        x_series, y_series = dxfp.to_xy_array(x_offset, y_offset)
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(x=x_series, y=y_series,
+                            mode='lines+markers',
+                            name='lines+markers'))
+        fig.update_layout(scene_aspectmode='data')
+        fig.update_yaxes(
+                    scaleanchor = "x",
+                    scaleratio = 1,
+                    constrain='domain'
+                )
+
+        fig.update_layout(clickmode='event+select')
+
+
+
+        return fig, stored_filename, uploaded_filename
+
+
+@app.callback(Output('download-d2g-gcode','data'), Input('d2g-download-button','n_clicks'), 
+                [State('uploaded-filename','value'), State('d2g-filename','value'), 
+                State('d2g-x-offset','value'), State('d2g-y-offset','value'),
+                State('d2g-four-axes','value'), State('d2g-feedrate','value'), State('d2g-pwm','value')
+
+                ], prevent_initial_call=True)
+def download_d2g_gcode(n_clicks, uploaded_filename, stored_filename, x_offset, y_offset, four_axis, feedrate, pwm):
+    doc = ezdxf.readfile(stored_filename)
+    dxfp = dxf_parser.DxfToGCode(doc)
+    gcode = dxfp.to_gcode(x_offset, y_offset, four_axis=='4', feedrate, pwm)
+
+    return dict(content="\n".join(gcode), filename=uploaded_filename + '.gcode')
+
 
 
 app.layout = dbc.Tabs([
@@ -266,6 +411,7 @@ app.layout = dbc.Tabs([
     dbc.Tab(main_tab_layout, label="Generate"),
     dbc.Tab(gcode_tab_layout, label="GCode"),
     dbc.Tab(gallery_tab_layout, label="Gallery"),
+    dbc.Tab(dxf2gcode_tab_layout, label="Dxf to Gcode"),
 
 ])
 
@@ -553,6 +699,9 @@ def show_card_head_warning(children):
         return profile_header,\
             plan_header, \
             output
+
+
+
 
 
 
