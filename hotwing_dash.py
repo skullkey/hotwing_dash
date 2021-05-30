@@ -274,7 +274,7 @@ dxf2gcode_tab_layout = html.Div([
             dcc.Upload(id='d2g-upload-data',
                         children=html.Div([
                             'Drag and Drop or ',
-                            html.A('Select Files')
+                            html.A('Select DXF Files (Only Line and LWPolyLine Elements supported)')
                         ]),
                         style={
                             'width': '100%',
@@ -291,57 +291,88 @@ dxf2gcode_tab_layout = html.Div([
 
 
     ]),
+    html.Div([
 
-    dbc.Row([
-        dbc.Col([
-            dbc.Card([
-                dbc.CardHeader("Profile",id="g2g-profile-header"),
-                dbc.CardBody(
-                    html.Div([dcc.Graph(id='d2g_graph_profile', config={'displayModeBar': False}),
-                        ])
-                )
-            ]),
-        ], className="col-12",id="d2g-chart-card"),
-    ]),
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardHeader("Profile From DXF",id="g2g-profile-header"),
+                    dbc.CardBody(
+                        html.Div([dcc.Graph(id='d2g_graph_profile', config={'displayModeBar': False}),
+                            ])
+                    )
+                ]),
+            ], className="col-12",id="d2g-chart-card"),
+        ]),
 
-    dbc.Row([
-        dbc.Col(['Filename',
-            dbc.Input(id="uploaded-filename", className="mr-2",type='text',disabled = True, value=''),
-            #"Starting Position",
-            #dbc.Input(id="d2g-starting", className="mr-2",     placeholder='Select a starting point for the cut...',  type='text',  value='', disabled=True),
-            'X-Offset',
-            dbc.Input(id="d2g-x-offset", className="mr-2", type='number', value=0),
-            'Y-Offset',
-            dbc.Input(id="d2g-y-offset", className="mr-2", type='number', value=0),
-            'Four Axes',
-            dcc.RadioItems(id='d2g-four-axes',
-                options=[
-                    {'label': 'XY', 'value': '2'},
-                    {'label': 'XYZAB', 'value': '4'},
-                ],
-                value='4',
-                labelStyle={'display': 'inline-block'}
-            ) , 
-            'Feedrate',
-            dbc.Input(id="d2g-feedrate", className="mr-2", type='number', value=160),
-            'PWM',
-            dbc.Input(id="d2g-pwm", className="mr-2", type='number', value=60),
+        dbc.Row([
+            dbc.Col([
+                dbc.Row([
+                    dbc.Col([
+                        'Filename',
+                        dbc.Input(id="uploaded-filename", className="mr-2",type='text',disabled = True, value=''),
+                    ], className='col-3'),
+                    dbc.Col([
+                        'X-Offset',
+                        dbc.Input(id="d2g-x-offset", className="mr-2", type='number', value=0),
+                    ], className='col-3'),
+                    dbc.Col([
+                        'Y-Offset',
+                        dbc.Input(id="d2g-y-offset", className="mr-2", type='number', value=0),
+
+                    ], className='col-3'),
+                    dbc.Col([
+                        html.Br(),
+                        dbc.Button(id='d2g-submit-button', n_clicks=0, children='Update', color="primary", className="mr-2"),
+                    ], className='col-3'),
+
+                ]),
+                dbc.Row([
+                    dbc.Col([
+                        'Four Axes',
+                        dcc.Dropdown(id='d2g-four-axes',
+                            options=[
+                                {'label': '2', 'value': '2'},
+                                {'label': '4      ', 'value': '4'},
+                            ],
+                            value='4',
+                        ) , 
+                    ], className='col-3'),
+                    dbc.Col([
+                        'Feedrate',
+                        dbc.Input(id="d2g-feedrate", className="mr-2", type='number', value=160),
+                    ], className='col-3'),
+                    dbc.Col([
+                        'PWM',
+                        dbc.Input(id="d2g-pwm", className="mr-2", type='number', value=60),
+                    ], className='col-3'),
+
+                    dbc.Col([
+                        html.Br(),
+                        dbc.Button(id='d2g-download-button', n_clicks=0, children='Download', color="success", className="mr-2"),
+                    ], className='col-3'),
+
+                ]),
+
+                
+                #"Starting Position",
+                #dbc.Input(id="d2g-starting", className="mr-2",     placeholder='Select a starting point for the cut...',  type='text',  value='', disabled=True),
+                
 
 
 
-            dbc.Button(id='d2g-submit-button', n_clicks=0, children='Update', color="primary", className="mr-2"),
-            dbc.Button(id='d2g-download-button', n_clicks=0, children='Download', color="success", className="mr-2"),
-            dbc.Input(id="d2g-filename", type='hidden', value=''),
+                
+                dbc.Input(id="d2g-filename", type='hidden', value=''),
 
-            dcc.Download(id="download-d2g-gcode")
+                dcc.Download(id="download-d2g-gcode")
 
 
-        ], className='col-3')
-
-    ])
+            ], className='col-9')
+        ]),
+    ], style={"display":"none"}, id='d2g-profile-view')
 ], id="d2g_gen_div")
 
-@app.callback([Output("d2g_graph_profile", "figure"), Output("d2g-filename","value"), Output('uploaded-filename','value')], 
+@app.callback([Output("d2g_graph_profile", "figure"), Output("d2g-filename","value"), Output('uploaded-filename','value'), Output('d2g-profile-view','style')], 
               [Input('d2g-upload-data',"contents"), Input('d2g-submit-button','n_clicks'),  ],
               [State('d2g-x-offset','value'), State('d2g-y-offset','value'), State('d2g-filename','value'), State('d2g-upload-data', 'filename'),])
 def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename):
@@ -353,7 +384,7 @@ def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename
 
     if not ctx.triggered:
         button_id = None
-        return "","",""
+        return "","","",{'display:none'}
     else:
         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
@@ -388,7 +419,7 @@ def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename
 
 
 
-        return fig, stored_filename, uploaded_filename
+        return fig, stored_filename, uploaded_filename, {'display':''}
 
 
 @app.callback(Output('download-d2g-gcode','data'), Input('d2g-download-button','n_clicks'), 
