@@ -200,7 +200,8 @@ gen_layout =  html.Div([
             ])
         ], className="col-6",id="chart-card"),
     ]),
-
+    Download(id="download-gcode"),
+    dcc.Textarea(id="gcode", value="",style={'display':'none'}),
 ], id="gen_div", style={"display":"none"})
 
 main_tab_layout.children = [file_open_layout, gen_layout]
@@ -237,35 +238,6 @@ gallery_tab_layout = html.Div([
 ])
 
 
-
-
-gcode_tab_layout = html.Div([
-    dbc.Button(id='save-gcode-button', n_clicks=0, children='Download', color="success", className="mr-2"),
-    Download(id="download-gcode"),
-    dbc.Row([
-        dbc.Col(
-            dbc.Card(
-                dbc.CardBody([
-
-
-                    dash_ace.DashAceEditor(
-                        id='gcode',
-                        value="",
-                        theme='github',
-                        mode='text',
-                        tabSize=2,
-                        enableBasicAutocompletion=False,
-                        enableLiveAutocompletion=False,
-                        placeholder='No gcode ...',
-                        wrapEnabled=True,
-                        style={"width":"100%"}
-                    )
-                ])
-            )
-        )
-    ])
-
-])
 
 dxf2gcode_tab_layout = html.Div([
 
@@ -445,15 +417,14 @@ def download_d2g_gcode(n_clicks, uploaded_filename, stored_filename, x_offset, y
 
 app.layout = dbc.Tabs([
     dbc.Tab(info_tab_layout, label="Info"),
-    dbc.Tab(main_tab_layout, label="Generate"),
-    dbc.Tab(gcode_tab_layout, label="GCode"),
-    dbc.Tab(gallery_tab_layout, label="Gallery"),
+    dbc.Tab(main_tab_layout, label="Wing Gcode"),
     dbc.Tab(dxf2gcode_tab_layout, label="Dxf to Gcode"),
+    dbc.Tab(gallery_tab_layout, label="Gallery"),
 
 ])
 
 
-@app.callback(Output("download", "data"), [Input("save-button-state", "n_clicks")], State('input', 'value'))
+"""@app.callback(Output("download", "data"), [Input("save-button-state", "n_clicks")], State('input', 'value'))
 def save_config(n_nlicks, config_input):
     cfg.config.clear()
     cfg.config.read_string(config_input)
@@ -462,10 +433,10 @@ def save_config(n_nlicks, config_input):
 
     prepped_content = prep_file_for_saving(config_input)
     return dict(content=prepped_content, filename=filename)
-
+"""
 
 @app.callback(Output("download-gcode", "data"), 
-              [Input("save-gcode-button", "n_clicks")], 
+              [Input("save-button-state", "n_clicks")], 
               State('gcode', 'value'))
 def save_config(n_nlicks, gcode_input):
 
