@@ -213,4 +213,17 @@ class GcodeGen():
 
         self.left_offset = bbox[0,0]
 
+
         return machine.gc, bbox, wing
+
+
+
+
+    def calc_wing_stats(self):
+        ''' Calculate various metrics about the flying wing'''
+        get_config = self.config.get_config
+
+        wing_area = 2 * (get_config('RootChord','Width') + get_config('TipChord','Width'))/2 * get_config('Wing','Width')
+        aspect_ratio =  (get_config('Wing','Width') * 2) **2 /  wing_area
+        taper_ratio = get_config('TipChord','Width') / get_config('RootChord','Width')
+        return {'wing_area':wing_area,'aspect_ratio':aspect_ratio,'taper_ratio':taper_ratio}

@@ -153,7 +153,7 @@ gen_layout =  html.Div([
                         placeholder='Python code ...',
                         wrapEnabled=True,
                         prefixLine=True,
-                        maxLines=40,
+                        maxLines=60,
                         style={"width":"100%"}
                     )
                 ])
@@ -424,6 +424,8 @@ app.layout = dbc.Tabs([
 ])
 
 
+
+
 @app.callback(Output("download-gcode", "data"), 
               [Input("save-button-state", "n_clicks")], 
               State('gcode', 'value'))
@@ -547,7 +549,11 @@ def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config
 
 
         fig, stats_3d = gplt.plot_gcode(pgc_filtered, draw_cutting_path=True,draw_foam_block=True, num_of_points=-1)
+        wing_stats = gc_gen.calc_wing_stats()
+        stats_3d['wing_stats'] = wing_stats
+
         stats_output = json.dumps(stats_3d)
+
         if "3d" in draw_selection:
 
             point_perc = float(point_slider) / 100.0
@@ -693,9 +699,16 @@ def show_card_head_warning(children):
         else:
             plan_header = {}        
 
+        output.append('Wing Area (cm2): %.2f' % (stats['wing_stats']['wing_area'] / 100 ) )
+        output.append('Aspect Ratio: %.2f' % (stats['wing_stats']['aspect_ratio']  ) )
+        output.append('Taper Ratio: %.2f'  % (stats['wing_stats']['taper_ratio']))
+
+
+        output_html = html.Div([html.Ul([html.Li(w) for w in output])])
+
         return profile_header,\
             plan_header, \
-            output
+            output_html
 
 
 
