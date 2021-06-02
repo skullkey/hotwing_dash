@@ -274,7 +274,7 @@ dxf2gcode_tab_layout = html.Div([
             dcc.Upload(id='d2g-upload-data',
                         children=html.Div([
                             'Drag and Drop or ',
-                            html.A('Select DXF Files (Only Line and LWPolyLine Elements supported)')
+                            html.A('Select DXF (Only Line and LWPolyLine Elements supported) or previously generated GCode Files')
                         ]),
                         style={
                             'width': '100%',
@@ -392,15 +392,14 @@ def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename
             content_type, content_string = contents.split(',')
             decoded = base64.b64decode(content_string)
             stored_filename = utils.get_temp_filename(UPLOAD_FOLDER)
-            stored_filename = os.path.join(UPLOAD_FOLDER, secure_filename(stored_filename))
+            _,extension =  os.path.splitext(uploaded_filename)
+            extension = extension.lower()
+
+            stored_filename = os.path.join(UPLOAD_FOLDER, secure_filename(stored_filename)) + extension
             with open(stored_filename, "wb") as f:
                 f.write(decoded)
-            doc = ezdxf.readfile(stored_filename)
-            dxfp = dxf_parser.DxfToGCode(doc)
 
-        else:
-            doc = ezdxf.readfile(stored_filename)
-            dxfp = dxf_parser.DxfToGCode(doc)
+        dxfp = dxf_parser.create_parser(stored_filename)
 
         x_series, y_series = dxfp.to_xy_array(x_offset, y_offset)
         fig = go.Figure()
@@ -429,11 +428,18 @@ def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename
 
                 ], prevent_initial_call=True)
 def download_d2g_gcode(n_clicks, uploaded_filename, stored_filename, x_offset, y_offset, four_axis, feedrate, pwm):
-    doc = ezdxf.readfile(stored_filename)
-    dxfp = dxf_parser.DxfToGCode(doc)
+
+    dxfp = dxf_parser.create_parser(stored_filename)
     gcode = dxfp.to_gcode(x_offset, y_offset, four_axis=='4', feedrate, pwm)
 
-    return dict(content="\n".join(gcode), filename=uploaded_filename + '.gcode')
+    _,extension =  os.path.splitext(stored_filename)
+    extension = extension.lower()
+    if extension != '.gcode':
+        downloadfilename = uploaded_filename + '.gcode'
+    else:
+        downloadfilename = uploaded_filename
+
+    return dict(content="\n".join(gcode), filename=downloadfilename)
 
 
 
