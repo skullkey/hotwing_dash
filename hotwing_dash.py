@@ -424,17 +424,6 @@ app.layout = dbc.Tabs([
 ])
 
 
-"""@app.callback(Output("download", "data"), [Input("save-button-state", "n_clicks")], State('input', 'value'))
-def save_config(n_nlicks, config_input):
-    cfg.config.clear()
-    cfg.config.read_string(config_input)
-    pn = cfg.get_config("Project","Name")
-    filename = removeDisallowedFilenameChars(pn)
-
-    prepped_content = prep_file_for_saving(config_input)
-    return dict(content=prepped_content, filename=filename)
-"""
-
 @app.callback(Output("download-gcode", "data"), 
               [Input("save-button-state", "n_clicks")], 
               State('gcode', 'value'))
