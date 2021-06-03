@@ -18,7 +18,7 @@ class Config():
 
         self.CONFIG_OPTIONS = {
                 'Project':{
-                                "Units":{"type":str,"required":False,"default":"inches", "domain":["millimeters","inches"]},
+                                "Units":{"type":str,"required":False,"default":"millimeters", "domain":["millimeters"]},
                                 "Name":{"type":str,"required":False,"default":""},
                 },
                 'RootChord':{   "Profile":{"type":str,"required":True},

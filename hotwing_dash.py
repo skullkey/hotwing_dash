@@ -702,9 +702,26 @@ def show_card_head_warning(children):
         else:
             plan_header = {}        
 
+
         output.append('Wing Area (cm2): %.2f' % (stats['wing_stats']['wing_area'] / 100 ) )
+        output.append('Wing Area (sq.in): %.2f' % (stats['wing_stats']['wing_area'] / 100 / 6.4516 ) )
+        output.append('Wing Area (sq.ft): %.2f' % (stats['wing_stats']['wing_area'] / 100 * 0.00107639 ) )
+        output.append('Wing Loading @ 100g (oz/sq.ft): %.2f' % (100.  / (stats['wing_stats']['wing_area']/ 100. * 0.00107639) / 28.35  ) )
+        output.append('Wing Cube Loading @ 100g (oz/sq.ft): %.2f' % (100.  / (stats['wing_stats']['wing_area']/ 100. * 0.00107639) **1.5 / 28.35  ) )
+
+        
+
+        
         output.append('Aspect Ratio: %.2f' % (stats['wing_stats']['aspect_ratio']  ) )
         output.append('Taper Ratio: %.2f'  % (stats['wing_stats']['taper_ratio']))
+        output.append('MAC (mm): %.2f'  % (stats['wing_stats']['mac']))
+        #output.append('MAC_X: %.2f'  % (stats['wing_stats']['mac_x']  ))
+        output.append('MAC Distance (mm): %.2f'  % (stats['wing_stats']['mac_y']  ))
+
+        output.append('CG (15%%) (mm): %.2f'  % (stats['wing_stats']['mac_x'] + stats['wing_stats']['mac'] * 0.15 ))
+        output.append('CG (20%%) (mm): %.2f'  % (stats['wing_stats']['mac_x'] + stats['wing_stats']['mac'] * 0.2 ))
+        output.append('CG (25%%) (mm): %.2f'  % (stats['wing_stats']['mac_x'] + stats['wing_stats']['mac'] * 0.25 ))
+
 
 
         output_html = html.Div([html.Ul([html.Li(w) for w in output])])

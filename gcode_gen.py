@@ -226,4 +226,15 @@ class GcodeGen():
         wing_area = 2 * (get_config('RootChord','Width') + get_config('TipChord','Width'))/2 * get_config('Wing','Width')
         aspect_ratio =  (get_config('Wing','Width') * 2) **2 /  wing_area
         taper_ratio = get_config('TipChord','Width') / get_config('RootChord','Width')
-        return {'wing_area':wing_area,'aspect_ratio':aspect_ratio,'taper_ratio':taper_ratio}
+
+        t = taper_ratio
+        rc = get_config('RootChord','Width')
+
+        # from https://core.ac.uk/download/pdf/79175663.pdf
+        mac = rc * 2./3. * (( 1 + t + t** 2 ) / ( 1 + t ))
+
+        mac_x = get_config('TipChord',"LeadingEdgeOffset") * (1+2*t) / (3 + 3*t) 
+        mac_y =  get_config('Wing','Width') * (1+2*t) / (3 + 3*t) 
+
+
+        return {'wing_area':wing_area,'aspect_ratio':aspect_ratio,'taper_ratio':taper_ratio,'mac':mac, 'mac_x':mac_x, 'mac_y':mac_y}
