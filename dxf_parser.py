@@ -125,7 +125,7 @@ class DxfToGCode:
         gcode_list.append("M5")
         return gcode_list 
 
-    def to_xy_array(self, x_offset, y_offset):
+    def to_xy_array(self, x_offset, y_offset, ignore_offset=False):
         start_x,start_y =  self.find_first_xy()
 
         self._reset_gco_list()
@@ -139,6 +139,11 @@ class DxfToGCode:
         min_x = min([x for x,y in coord_list])
         min_y = min([y for x,y in coord_list])
 
+
+        if ignore_offset:
+            x_offset = min_x  
+            y_offset = min_y 
+
         x_series = [x+x_offset-min_x for x,y in coord_list]
         x_series.append(x_series[0])
         x_series.insert(0,0)
@@ -149,7 +154,7 @@ class DxfToGCode:
         y_series.insert(0,0)
         y_series.append(0)
 
-        return x_series, y_series
+        return x_series, y_series, x_offset, y_offset
 
 
 class GcodeToGcode(DxfToGCode):

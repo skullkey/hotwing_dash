@@ -344,9 +344,11 @@ dxf2gcode_tab_layout = html.Div([
     ], style={"display":"none"}, id='d2g-profile-view')
 ], id="d2g_gen_div")
 
-@app.callback([Output("d2g_graph_profile", "figure"), Output("d2g-filename","value"), Output('uploaded-filename','value'), Output('d2g-profile-view','style')], 
-              [Input('d2g-upload-data',"contents"), Input('d2g-submit-button','n_clicks'),  ],
-              [State('d2g-x-offset','value'), State('d2g-y-offset','value'), State('d2g-filename','value'), State('d2g-upload-data', 'filename'),])
+@app.callback([Output("d2g_graph_profile", "figure"), Output("d2g-filename","value"), 
+                Output('uploaded-filename','value'), Output('d2g-profile-view','style'),
+                Output('d2g-x-offset','value'), Output('d2g-y-offset','value')], 
+              [Input('d2g-upload-data',"contents"), Input('d2g-submit-button','n_clicks'), Input('d2g-x-offset','value'), Input('d2g-y-offset','value'),  ],
+              [ State('d2g-filename','value'), State('d2g-upload-data', 'filename'),])
 def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename):
 
     ctx = dash.callback_context
@@ -356,7 +358,7 @@ def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename
 
     if not ctx.triggered:
         button_id = None
-        return "","","",{'display:none'}
+        return "","","",{'display:none'},x_offset, y_offset
     else:
         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
@@ -373,7 +375,8 @@ def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename
 
         dxfp = dxf_parser.create_parser(stored_filename)
 
-        x_series, y_series = dxfp.to_xy_array(x_offset, y_offset)
+        x_series, y_series, x_offset, y_offset = dxfp.to_xy_array(x_offset, y_offset, ignore_offset= button_id == "d2g-upload-data")
+
         fig = go.Figure()
 
         fig.add_trace(go.Scatter(x=x_series, y=y_series,
@@ -390,7 +393,7 @@ def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename
 
 
 
-        return fig, stored_filename, uploaded_filename, {'display':''}
+        return fig, stored_filename, uploaded_filename, {'display':''}, x_offset, y_offset
 
 
 @app.callback(Output('download-d2g-gcode','data'), Input('d2g-download-button','n_clicks'), 
