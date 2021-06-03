@@ -114,7 +114,7 @@ class DxfToGCode:
         gcode_list = [f"; x_offset = {x_offset}", f"; y_offset = {y_offset}"]
         gcode_list.extend(["G21","G90","G1 F%.3f" % feedrate, "M3 S%d" % pwm ])
         
-        x_series, y_series = self.to_xy_array(x_offset, y_offset)
+        x_series, y_series, _, _ = self.to_xy_array(x_offset, y_offset)
         coord_list = zip(x_series, y_series)
         
         if four_axis:
