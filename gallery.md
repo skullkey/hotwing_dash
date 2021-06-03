@@ -1,3 +1,6 @@
+Gallery of wing and fuse designs and builts 
+===
+
 # JW 36
 ![Mini-JW](static/gallery/jw36/minijw.jpeg)
 ![Mini-JW](static/gallery/jw36/jw36_glass.jpg)
@@ -15,7 +18,7 @@ Fuse DXF;
 
 ---
 
-# JW 48
+# JW 48 (in progress)
 ![JW48](static/gallery/jw48/trace.png)
 
 EPS Gcode:
