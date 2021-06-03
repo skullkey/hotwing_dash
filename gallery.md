@@ -1,10 +1,35 @@
-# Mini JW
-![Mini-JW](static/gallery/minijw.jpeg)
-![Mini-JW](static/gallery/jw36_glass.jpg)
+# JW 36
+![Mini-JW](static/gallery/jw36/minijw.jpeg)
+![Mini-JW](static/gallery/jw36/jw36_glass.jpg)
 
 
 EPS Gcode:
-* [Left Wing](static/gallery/JW36_left.gcode)
-* [Right Wing](static/gallery/JW36_right.gcode)
-* [Fuse Side](static/gallery/jw36_side.nc)
-* [Fuse Top](static/gallery/jw36_top.nc)
+* [Left Wing](static/gallery/jw36/JW36_left.gcode)
+* [Right Wing](static/gallery/jw36/JW36_right.gcode)
+* [Fuse Side](static/gallery/jw36/JW36_Nose%20-%20side.dxf.gcode)
+* [Fuse Top](static/gallery/jw36/JW36_Nose%20-%20top.dxf.gcode)
+
+Fuse DXF;
+* [Fuse Side](static/gallery/jw36/JW36_Nose%20-%20side.dxf)
+* [Fuse Top](static/gallery/jw36/JW36_Nose%20-%20top.dxf)
+
+---
+
+# JW 48
+![JW48](static/gallery/jw48/trace.png)
+
+EPS Gcode:
+* [Wing](static/gallery/jw48/JW48.gcode)
+* [Fuse Side Front](static/gallery/jw48/jw48_nose_front.dxf.gcode)
+* [Fuse Side Back](static/gallery/jw48/jw48_nose_back.dxf.gcode)
+* [Fuse Top Front](static/gallery/jw48/JW48_Nose%20-%20top_front.dxf.gcode)
+* [Fuse Top Back](static/gallery/jw48/JW48_Nose%20-%20top_back.dxf.gcode)
+
+
+
+Fuse DXF;
+* [Fuse Side Front](static/gallery/jw48/jw48_nose_front.dxf)
+* [Fuse Side Back](static/gallery/jw48/jw48_nose_back.dxf)
+* [Fuse Top Front](static/gallery/jw48/JW48_Nose%20-%20top_front.dxf)
+* [Fuse Top Back](static/gallery/jw48/JW48_Nose%20-%20top_back.dxf)
+
