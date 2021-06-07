@@ -322,6 +322,8 @@ dxf2gcode_tab_layout = html.Div([
                     dbc.Col([
                         html.Br(),
                         dbc.Button(id='d2g-download-button', n_clicks=0, children='Download', color="success", className="mr-2"),
+                        dbc.Button(id='d2g-selig-button', n_clicks=0, children='Selig', color="success", className="mr-2"),
+
                     ], className='col-3'),
 
                 ]),
@@ -336,7 +338,8 @@ dxf2gcode_tab_layout = html.Div([
                 
                 dbc.Input(id="d2g-filename", type='hidden', value=''),
 
-                dcc.Download(id="download-d2g-gcode")
+                dcc.Download(id="download-d2g-gcode"),
+                dcc.Download(id="download-d2g-selig")
 
 
             ], className='col-9')
@@ -415,6 +418,18 @@ def download_d2g_gcode(n_clicks, uploaded_filename, stored_filename, x_offset, y
         downloadfilename = uploaded_filename
 
     return dict(content="\n".join(gcode), filename=downloadfilename)
+
+
+@app.callback(Output('download-d2g-selig','data'), Input('d2g-selig-button','n_clicks'),
+        [State('uploaded-filename','value'), State('d2g-filename','value'), 
+                State('d2g-x-offset','value'), State('d2g-y-offset','value'),
+                State('d2g-four-axes','value'), State('d2g-feedrate','value'), State('d2g-pwm','value')
+        ])
+def download_selig(selig_clicks,  uploaded_filename, stored_filename, x_offset, y_offset, four_axis, feedrate, pwm):
+    dxfp = dxf_parser.create_parser(stored_filename)  
+    output = dxfp.to_selig(uploaded_filename)
+    
+    return dict(content="\n".join(output), filename = uploaded_filename+".dat")  
 
 
 

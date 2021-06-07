@@ -28,7 +28,7 @@ def validate_kerf(kerf):
         k = kerf.split(',')
         return (float(k[0]),float(k[1]))
     else:
-        return float(kerf)
+        return (float(kerf), float(kerf))
 
 
 class ProfileCache():
@@ -143,17 +143,20 @@ class GcodeGen():
                             )
 
         panel = Panel(rib1, rib2, get_config('Wing',"Width"))
+        kerf =  validate_kerf(get_config('Machine',"Kerf"))
         if side == "right":
             panel = Panel.reverse(panel)
             self.left_offset = root_offset
         else:
             self.left_offset = get_config('Machine',"Width") -  panel.width - root_offset
+            kerf = (kerf[1],kerf[0])
+
 
         if panel.width > get_config('Machine',"Width"):
                 raise Exception("Error: Panel (%s) is bigger than the machine width (%s)." % (get_config('Machine',"Width"), panel.width) )
 
         machine = Machine(  width = get_config('Machine',"Width"), 
-                        kerf =  validate_kerf(get_config('Machine',"Kerf")),
+                        kerf = kerf,
                         profile_points = self.points,
                         units = get_config('Project',"Units"),
                         feedrate = get_config('Machine',"Feedrate")

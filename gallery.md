@@ -19,10 +19,11 @@ Fuse DXF;
 ---
 
 # JW 48 (in progress)
-![JW48](static/gallery/jw48/trace.png)
+![JW48](static/gallery/jw48/three_jw_48.jpeg)
 
 EPS Gcode:
-* [Wing](static/gallery/jw48/JW48.gcode)
+* [Wing Left](static/gallery/jw48/JW48_left_1.25.gcode)
+* [Wing Right](static/gallery/jw48/JW48_right_1.25.gcode)
 * [Fuse Side Front](static/gallery/jw48/jw48_nose_front.dxf.gcode)
 * [Fuse Side Back](static/gallery/jw48/jw48_nose_back.dxf.gcode)
 * [Fuse Top Front](static/gallery/jw48/JW48_Nose%20-%20top_front.dxf.gcode)

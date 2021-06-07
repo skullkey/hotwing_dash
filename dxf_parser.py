@@ -2,6 +2,8 @@ import ezdxf
 import math
 import re
 import os
+import numpy as np
+from collections import OrderedDict
 
 
 class GCodeObj:
@@ -125,7 +127,7 @@ class DxfToGCode:
         gcode_list.append("M5")
         return gcode_list 
 
-    def to_xy_array(self, x_offset, y_offset, ignore_offset=False):
+    def to_xy_array(self, x_offset, y_offset, ignore_offset=False, add_zero=True):
         start_x,start_y =  self.find_first_xy()
 
         self._reset_gco_list()
@@ -146,15 +148,60 @@ class DxfToGCode:
 
         x_series = [x+x_offset-min_x for x,y in coord_list]
         x_series.append(x_series[0])
-        x_series.insert(0,0)
-        x_series.append(0)
+        if add_zero:
+            x_series.insert(0,0)
+            x_series.append(0)
 
         y_series  = [y+y_offset-min_y for x, y in coord_list]
         y_series.append(y_series[0])
-        y_series.insert(0,0)
-        y_series.append(0)
+        if add_zero:
+            y_series.insert(0,0)
+            y_series.append(0)
 
         return x_series, y_series, x_offset, y_offset
+
+    def to_selig(self, profilename):
+        x_series, y_series, _,_ = self.to_xy_array(0,0,False, False)
+
+
+
+        items_to_shift = np.argmin(x_series)
+
+        x_series = np.roll(x_series, -items_to_shift)
+        y_series = np.roll(y_series, -items_to_shift)
+
+
+        org_x = x_series[0]
+        org_y = y_series[0]
+        x_series = np.array([x-org_x for x in x_series], dtype=np.double)
+        y_series = np.array([y-org_y for y in y_series], dtype=np.double)
+
+        max_index = np.argmax(x_series)
+        max_x = np.max(x_series)
+
+        first, second = np.mean(y_series[:max_index]), np.mean(y_series[max_index:])
+
+        if first < second:
+            x_series = np.flipud(x_series)
+            y_series = np.flipud(y_series)
+
+        print(max_x, x_series[:3])
+        profile = [((max_x - x)/(max_x),y/(max_x)) for x,y in zip(x_series,y_series)]        
+
+        max_index = np.argmax(x_series)
+
+        profile_top = list(OrderedDict((round(x,3), (round(x,3),round(y,3))) for x,y in profile[:max_index]).values())
+        profile_bottom = list(OrderedDict((round(x,3), (round(x,3),round(y,3))) for x,y in profile[max_index:]).values())
+        profile_top.extend(profile_bottom)
+        profile_top.append(profile_top[0])
+
+        output = [profilename]
+        for x,y in profile_top:
+            output.append("    %.3f     %.3f" % (x,y))
+
+        return output
+
+
 
 
 class GcodeToGcode(DxfToGCode):
@@ -167,7 +214,7 @@ class GcodeToGcode(DxfToGCode):
     def _parse(self):
         self.gco_list = []
 
-        xy_coord = re.compile(r"[xX]([0-9\.]*) [yY]([0-9\.]*)")
+        xy_coord = re.compile(r"[xX]([-]?[0-9\.]*) [yY]([-]?[0-9\.]*)")
         
         newpoints = []
         for line in self.gcode_lines:
@@ -196,5 +243,7 @@ def create_parser(stored_filename):
             with open(stored_filename) as f:
                 lines = f.readlines()
             dxfp = GcodeToGcode(lines)
+        else:
+            raise Exception("Unsupported filetype")
 
         return dxfp
