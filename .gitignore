@@ -5,3 +5,4 @@ gimp/*
 .vscode
 *.sh
 hotwing-dash-contrib/*
+hotwing-dash-contrib
