@@ -50,6 +50,7 @@ with open("example.cfg") as f:
     config_template = f.read()
 
 profile_cache = gcode_gen.ProfileCache("profiles")
+CUSTOM_PROFILE_PATH = 'contrib/profiles'
 
 # Build App
 app = dash.Dash(__name__,
@@ -768,6 +769,13 @@ def autocompleter():
         for p in profile_names:
             p = p.split("/")[-1]
             autocomplete.append({"name": p, "value": p, "score": 1000, "meta": "Profile"})
+
+    elif 'contrib' in prefix:
+        profile_names = glob.glob(CUSTOM_PROFILE_PATH + "/**/*.*", recursive=True)
+        for p in profile_names:
+            p = "/".join(p.split("/")[1:])
+            autocomplete.append({"name": p, "value": p, "score": 1000, "meta": "Profile"})
+
 
     elif '=' in prefix:
         parameter = prefix.split("=")[0].strip()
