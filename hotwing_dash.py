@@ -15,7 +15,7 @@ import plotting
 import flask
 from flask import jsonify
 from flask_cors import CORS
-from flask import request
+from flask import request, send_from_directory
 
 server = flask.Flask(__name__)
 CORS(server)
@@ -39,6 +39,9 @@ import ezdxf
 import dxf_parser
 import plotly.graph_objects as go
 import utils
+
+import werkzeug
+
 
 
 cfg = config_options.Config()
@@ -222,7 +225,12 @@ info_tab_layout = html.Div([
 ])
 
 
-with open("gallery.md") as f:
+if not os.path.exists('contrib/gallery.md'):
+    gallery_file = "gallery_default.md"
+else:
+    gallery_file = "contrib/gallery.md"
+
+with open(gallery_file) as f:
     gallery_md = f.read()
 
 gallery_tab_layout = html.Div([
@@ -776,6 +784,12 @@ def autocompleter():
                 if keyword.lower().startswith(prefix.lower()):
                     autocomplete.append({"name": keyword, "value": keyword, "score": 100, "meta": "Config"})
     return jsonify(autocomplete)
+
+
+
+@server.route('/img/<path:filename>')
+def custom_static(filename):
+    return send_from_directory("contrib/img", filename)
 
 
 
