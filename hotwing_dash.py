@@ -41,6 +41,7 @@ import plotly.graph_objects as go
 import utils
 
 import werkzeug
+import subprocess
 
 
 
@@ -226,20 +227,21 @@ info_tab_layout = html.Div([
 ])
 
 
-if not os.path.exists('contrib/gallery.md'):
-    gallery_file = "gallery_default.md"
-else:
-    gallery_file = "contrib/gallery.md"
-
-with open(gallery_file) as f:
-    gallery_md = f.read()
 
 gallery_tab_layout = html.Div([
+    dbc.Row([
+        dbc.Col([
+            html.Div(id='reload-status'),
+            dbc.Button(id='reload-gallery-button', n_clicks=0, children='Reload', color="primary", className="mr-2"),
+
+        ]),
+    ]),
+
     dbc.Row([
         dbc.Col(
             dbc.Card(
                 dbc.CardBody([
-                    dcc.Markdown(gallery_md, dangerously_allow_html=True)
+                    dcc.Markdown(load_gallery_file(), dangerously_allow_html=True, id='gallery-md')
                 ])
             )
         )
@@ -503,6 +505,14 @@ def update_main_content(n_clicks_new, n_clicks_close, contents):
 def display_confirm(value):
     return True
 
+
+
+
+@app.callback([Output('reload-status','children'), Output('gallery-md','children')], 
+            Input('reload-gallery-button','n_clicks'))
+def reload_gallery(n):
+    result=subprocess.check_output(['contrib/reload.sh'])
+    return result.decode("utf-8"), load_gallery_file()
 
 
 @app.callback([Output('output-state', 'children'), 

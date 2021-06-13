@@ -5,6 +5,7 @@ from hotwing_core.utils import isect_line_plane_v3
 from operator import itemgetter
 import math
 import numpy as np
+import os
 
 
 validFilenameChars = "-_.()%s%s" % (string.ascii_letters, string.digits)
@@ -66,3 +67,15 @@ def get_temp_filename(folder):
     with tempfile.NamedTemporaryFile(dir=folder, delete=False) as tmpfile:
         temp_file_name = tmpfile.name
     return temp_file_name
+
+
+def load_gallery_file():
+    if not os.path.exists('contrib/gallery.md'):
+        gallery_file = "gallery_default.md"
+    else:
+        gallery_file = "contrib/gallery.md"
+
+    with open(gallery_file) as f:
+        gallery_md = f.read()
+
+    return gallery_md
