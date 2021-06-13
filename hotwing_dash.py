@@ -438,8 +438,8 @@ app.layout = dbc.Tabs([
     dbc.Tab(main_tab_layout, label="Wing Gcode"),
     dbc.Tab(dxf2gcode_tab_layout, label="Dxf to Gcode"),
     dbc.Tab(gallery_tab_layout, label="Gallery"),
+], id="tabs")
 
-])
 
 
 

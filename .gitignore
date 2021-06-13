@@ -4,3 +4,4 @@ profiles/*
 gimp/*
 .vscode
 *.sh
+hotwing-dash-contrib/*
