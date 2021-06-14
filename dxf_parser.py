@@ -184,20 +184,25 @@ class DxfToGCode:
         if first < second:
             x_series = np.flipud(x_series)
             y_series = np.flipud(y_series)
+            items_to_shift = np.argmin(x_series)
+            x_series = np.roll(x_series, -items_to_shift)
+            y_series = np.roll(y_series, -items_to_shift)
 
         print(max_x, x_series[:3])
         profile = [((max_x - x)/(max_x),y/(max_x)) for x,y in zip(x_series,y_series)]        
 
         max_index = np.argmax(x_series)
 
-        profile_top = list(OrderedDict((round(x,3), (round(x,3),round(y,3))) for x,y in profile[:max_index]).values())
-        profile_bottom = list(OrderedDict((round(x,3), (round(x,3),round(y,3))) for x,y in profile[max_index:]).values())
+        # doing some gymnastics here because the selig format does not allow duplicate x-coordinates 
+
+        profile_top =    list(OrderedDict( (round(xy[0],3)-i/100000. ,  (round(xy[0],3) - i/100000.,round(xy[1],3))) for i,xy in enumerate(profile[:max_index])).values())
+        profile_bottom = list(OrderedDict( (round(xy[0],3)+i/100000. ,  (round(xy[0],3) + i/100000.,round(xy[1],3))) for i,xy in enumerate(profile[max_index:])).values())
         profile_top.extend(profile_bottom)
         profile_top.append(profile_top[0])
 
         output = [profilename]
         for x,y in profile_top:
-            output.append("    %.3f     %.3f" % (x,y))
+            output.append("    %.5f     %.3f" % (x,y))
 
         return output
 

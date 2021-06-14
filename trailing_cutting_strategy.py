@@ -315,6 +315,7 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             c1_3d = np.append(c1_2d, c1_3d[2])
             c2_3d = np.append(c2_2d, c2_3d[2])
 
+        #print(c1_3d, c2_3d)
         pos = m._calc_machine_position(c1_3d, c2_3d)
 
         return {"x":pos[0][0],"y":pos[0][1],"u":pos[1][0],"v":pos[1][1]}

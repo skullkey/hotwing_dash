@@ -346,7 +346,7 @@ dxf2gcode_tab_layout = html.Div([
 
 
 
-                
+                dcc.Link(id="d2g-tmp-url", href='', target="_blank", children='Link to Selig'),
                 dbc.Input(id="d2g-filename", type='hidden', value=''),
 
                 dcc.Download(id="download-d2g-gcode"),
@@ -360,7 +360,8 @@ dxf2gcode_tab_layout = html.Div([
 
 @app.callback([Output("d2g_graph_profile", "figure"), Output("d2g-filename","value"), 
                 Output('uploaded-filename','value'), Output('d2g-profile-view','style'),
-                Output('d2g-x-offset','value'), Output('d2g-y-offset','value')], 
+                Output('d2g-x-offset','value'), Output('d2g-y-offset','value'),
+                Output('d2g-tmp-url','href')], 
               [Input('d2g-upload-data',"contents"), Input('d2g-submit-button','n_clicks'), Input('d2g-x-offset','value'), Input('d2g-y-offset','value'),  ],
               [ State('d2g-filename','value'), State('d2g-upload-data', 'filename'),])
 def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename):
@@ -407,7 +408,19 @@ def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename
 
 
 
-        return fig, stored_filename, uploaded_filename, {'display':''}, x_offset, y_offset
+        return fig, stored_filename, uploaded_filename, {'display':''}, x_offset, y_offset, f"/selig{stored_filename}.dat"
+
+
+@server.route('/selig/<path:filename>')
+def selig_link(filename):
+    #filename = "/".join(filename.split("/")[1:])
+    dxfp = dxf_parser.create_parser("/"+filename[:-4])  
+    profilename=  werkzeug.utils.secure_filename(filename)
+    output = dxfp.to_selig(profilename)
+    output = "\n".join(output)
+
+    return output
+
 
 
 @app.callback(Output('download-d2g-gcode','data'), Input('d2g-download-button','n_clicks'), 
@@ -774,13 +787,13 @@ def autocompleter():
     prefix = request.args.get("prefix")
     autocomplete = []
 
-    if profile_cache.path in prefix:
+    '''if profile_cache.path in prefix:
         profile_names = glob.glob(profile_cache.path + "/*.dat")
         for p in profile_names:
             p = p.split("/")[-1]
             autocomplete.append({"name": p, "value": p, "score": 1000, "meta": "Profile"})
-
-    elif 'contrib' in prefix:
+    '''
+    if 'contrib' in prefix:
         profile_names = glob.glob(CUSTOM_PROFILE_PATH + "/**/*.*", recursive=True)
         for p in profile_names:
             p = "/".join(p.split("/")[1:])
