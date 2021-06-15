@@ -79,3 +79,15 @@ def load_gallery_file():
         gallery_md = f.read()
 
     return gallery_md
+
+def runs(x_series):
+    result = [0]
+    for i,x in enumerate(x_series):
+        if i > 0:
+            
+            if abs(x_series[i-1] - x_series[i])< 1e-8:
+                result.append(result[-1]+1)
+            else:
+                result.append(0)
+
+    return result

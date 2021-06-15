@@ -3,7 +3,9 @@ import math
 import re
 import os
 import numpy as np
+import utils
 from collections import OrderedDict
+
 
 
 class GCodeObj:
@@ -195,10 +197,13 @@ class DxfToGCode:
 
         # doing some gymnastics here because the selig format does not allow duplicate x-coordinates 
 
-        profile_top =    list(OrderedDict( (round(xy[0],3)-i/100000. ,  (round(xy[0],3) - i/100000.,round(xy[1],3))) for i,xy in enumerate(profile[:max_index])).values())
-        profile_bottom = list(OrderedDict( (round(xy[0],3)+i/100000. ,  (round(xy[0],3) + i/100000.,round(xy[1],3))) for i,xy in enumerate(profile[max_index:])).values())
+        runs = utils.runs(x_series)
+
+        profile_top =    list(OrderedDict( (round(xy[0],3)-i/100000. ,  (round(xy[0],3) - i/100000.,round(xy[1],3))) for i,xy in zip(runs[:max_index],profile[:max_index])).values())
+        profile_bottom = list(OrderedDict( (round(xy[0],3)+i/100000. ,  (round(xy[0],3) + i/100000.,round(xy[1],3))) for i,xy in zip(runs[max_index:],profile[max_index:])).values())
         profile_top.extend(profile_bottom)
-        profile_top.append(profile_top[0])
+        if profile[-1] != (1.,0.):
+            profile_top.append(profile_top[0])
 
         output = [profilename]
         for x,y in profile_top:
