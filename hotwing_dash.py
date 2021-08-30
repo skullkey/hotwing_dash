@@ -257,7 +257,7 @@ dxf2gcode_tab_layout = html.Div([
             dcc.Upload(id='d2g-upload-data',
                         children=html.Div([
                             'Drag and Drop or ',
-                            html.A('Select DXF (Only Line and LWPolyLine Elements supported) or previously generated GCode Files')
+                            html.A('Select DXF (Only Line and LWPolyLine Elements supported) or SVG or previously generated GCode Files')
                         ]),
                         style={
                             'width': '100%',

@@ -1,4 +1,5 @@
 import ezdxf
+import svgpathtools
 import math
 import re
 import os
@@ -242,6 +243,30 @@ class GcodeToGcode(DxfToGCode):
         self.gco_parsed_list = self.gco_list.copy()
 
 
+
+class SVGToGcode(DxfToGCode):
+    def __init__(self, paths):
+        self.paths = paths
+        DxfToGCode.__init__(self, None)
+
+    def _parse(self):
+        self.gco_list = []
+
+    
+        for path in self.paths:
+            newpoints = []
+            for segment in path:
+                for i in np.arange(0,1,0.05):
+                    c = segment.point(i)
+                    x,y = c.real,c.imag
+                    newpoints.append((x,y))
+            self.gco_list.append(LWPolyLine(newpoints))
+        
+
+        self.gco_parsed_list = self.gco_list.copy()
+
+
+
 def create_parser(stored_filename):
         _,extension =  os.path.splitext(stored_filename)
         extension = extension.lower()
@@ -249,6 +274,10 @@ def create_parser(stored_filename):
         if extension == '.dxf':
             doc = ezdxf.readfile(stored_filename)
             dxfp = DxfToGCode(doc)
+
+        elif extension == '.svg':
+            paths,_ = svgpathtools.svg2paths(stored_filename)
+            dxfp = SVGToGcode(paths)
         elif extension == '.gcode':
             with open(stored_filename) as f:
                 lines = f.readlines()
