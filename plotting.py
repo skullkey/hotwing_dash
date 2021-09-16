@@ -357,6 +357,8 @@ class GcodePlotter():
             x3=self.mbox.left 
             y3=max_line[0]
 
+
+
             fig.add_trace(
                 go.Scatter(
                     x = [x0,x1,x2,x3,x0], 
@@ -422,6 +424,23 @@ class GcodePlotter():
         wing_x.append(self.wing_plan[0][0] - delta_x)
         wing_y.append(self.wing_plan[0][1] - delta_y)
 
+        x_coords = []
+        y_coords = []
+
+        for i,(x,y) in enumerate(zip(wing_x,wing_y)):
+            if i ==0:
+                prev_x = x
+
+                prev_y = y
+            else:
+                steps = int(max(abs(x - prev_x) + 1,abs(y - prev_y) + 1))
+                x_coords.extend(np.linspace(prev_x,x,steps))
+                y_coords.extend(np.linspace(prev_y,y, steps))
+
+                prev_x = x
+                prev_y = y
+
+
 #
         #x1 = self.fbox.left + self.fbox.width
         #y1 = min(pgcode_wing.round_U)
@@ -435,8 +454,8 @@ class GcodePlotter():
 
         fig.add_trace(
                 go.Scatter(
-                    x = wing_x, 
-                    y = wing_y,
+                    x = x_coords, 
+                    y = y_coords,
                     name = "Wing Plan",
                     line = {"color":"green"}
                 )
