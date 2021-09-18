@@ -291,19 +291,36 @@ def create_parser(stored_filename):
         return dxfp
 
 
-def paths_to_str(paths):
-    doc = svgpathtools.wsvg(paths,paths2Drawing=True)
+def paths_to_str(paths, bboxes):
+    min_x, min_y,max_x, max_y = bboxes[0]
+    for i,bbox in enumerate(bboxes):
+        if i>0:
+            min_x = min(min_x, bbox[0])
+            min_y = min(min_y, bbox[1])
+            max_x = max(max_x, bbox[2])
+            max_y = max(max_y, bbox[3])
+            
+
+    doc = svgpathtools.wsvg(paths,paths2Drawing=True, dimensions=("%smm" % max_x,"%smm" % max_y),  stroke_widths=[1]*10)
     return doc.tostring()
 
 def series_to_path(data):
     x_series = data['x']
     y_series = data['y']
+    max_y = max(y_series)
+    y_series = [max_y - y for y in y_series]
+
+    min_x = min(x_series)
+    min_y = min(y_series)
+    max_x = max(x_series)
+    max_y = max(y_series)
+
     segs = []
     for i,(x,y) in enumerate(zip(x_series,y_series)):
         if i >0:
-            seg = svgpathtools.Line(prev_x-prev_y*1j,x-y*1j)
+            seg = svgpathtools.Line(prev_x+prev_y*1j,x+y*1j)
             segs.append(seg)
         prev_x = x
         prev_y = y
      
-    return svgpathtools.Path(*segs)
+    return svgpathtools.Path(*segs), (min_x, min_y, max_x, max_y)
