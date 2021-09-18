@@ -1,5 +1,8 @@
 import ezdxf
 import svgpathtools
+
+
+
 import math
 import re
 import os
@@ -286,3 +289,21 @@ def create_parser(stored_filename):
             raise Exception("Unsupported filetype")
 
         return dxfp
+
+
+def paths_to_str(paths):
+    doc = svgpathtools.wsvg(paths,paths2Drawing=True)
+    return doc.tostring()
+
+def series_to_path(data):
+    x_series = data['x']
+    y_series = data['y']
+    segs = []
+    for i,(x,y) in enumerate(zip(x_series,y_series)):
+        if i >0:
+            seg = svgpathtools.Line(prev_x-prev_y*1j,x-y*1j)
+            segs.append(seg)
+        prev_x = x
+        prev_y = y
+     
+    return svgpathtools.Path(*segs)

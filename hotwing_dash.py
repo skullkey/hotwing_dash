@@ -167,17 +167,31 @@ gen_layout =  html.Div([
         dbc.Col([
             dbc.Form([inline_checklist]),
             dbc.Card([
-                dbc.CardHeader("Profile",id="profile-header"),
+                dbc.CardHeader([dbc.Row([
+                                    dbc.Col(html.Div("Profile"),width=10) ,
+                                    dbc.Col(dbc.Button(id="export-profile-svg",n_clicks=0,children='Export',color="primary", className="mr-2"), width=2)
+
+                                    ], justify="between"),
+                                    dcc.Store(id="store-profile-svg"),
+                                    dcc.Download(id="download-profile-svg")
+                                ],id="profile-header"),
                 dbc.CardBody(
                     html.Div([dcc.Graph(id='graph_profile', config={'displayModeBar': False}),
                         ])
                 )
             ]),
             dbc.Card([
-                dbc.CardHeader("Plan", id="plan-header"),
+                dbc.CardHeader([dbc.Row([
+                                    dbc.Col(html.Div("Plan"), width=10), 
+                                    dbc.Col(dbc.Button(id="export-plan-svg",n_clicks=0,children='Export',color="primary", className="mr-2"), width=2)
+                                        ], justify="between"),
+                                        dcc.Store(id="store-plan-svg"),
+                                        dcc.Download(id="download-plan-svg")
+                                ], id="plan-header"),
                 dbc.CardBody(
                     html.Div([
                                 dcc.Graph(id='graph_plan', config={'displayModeBar': False}),
+                                
                         ])
                 )
             ]),
@@ -470,15 +484,47 @@ app.layout = dbc.Tabs([
 
 @app.callback(Output("download-gcode", "data"), 
               [Input("save-button-state", "n_clicks")], 
-              State('gcode', 'value'))
-def save_config(n_nlicks, gcode_input):
+              [State('gcode', 'value'),State('input', 'value')]   )
+def save_config(n_nlicks, gcode_input, config_input):
 
+    cfg.read_string(config_input)
     pn = cfg.get_config("Project","Name")
     filename = "%s.gcode" % removeDisallowedFilenameChars(pn)
 
     
     return dict(content=gcode_input, filename=filename)
 
+
+@app.callback(Output("download-plan-svg", "data"), 
+              [Input("export-plan-svg", "n_clicks")], 
+              [State('store-plan-svg', 'data'), State('input', 'value')])
+def download_plan_svg(n_nlicks, data, config_input):
+
+
+    cfg.read_string(config_input)
+    pn = cfg.get_config("Project","Name")
+    filename = "%s_plan.svg" % removeDisallowedFilenameChars(pn)
+
+    path = dxf_parser.series_to_path(data)
+    output = dxf_parser.paths_to_str([path])
+    return dict(content=output, filename=filename)
+
+
+@app.callback(Output("download-profile-svg", "data"), 
+              [Input("export-profile-svg", "n_clicks")], 
+              [State('store-profile-svg', 'data'),State('input', 'value')])
+def download_profile_svg(n_nlicks, data, config_input):
+
+
+    cfg.read_string(config_input)
+    pn = cfg.get_config("Project","Name")
+    filename = "%s_profile.svg" % removeDisallowedFilenameChars(pn)
+
+    left_path = dxf_parser.series_to_path(data["left"])
+    right_path = dxf_parser.series_to_path(data["right"])
+
+    output = dxf_parser.paths_to_str([left_path, right_path])
+    return dict(content=output, filename=filename)
 
 
 
@@ -534,7 +580,9 @@ def reload_gallery(n):
                 Output("graph_plan", "figure"), 
                 Output('gcode','value'), 
                 Output('editor-card', 'style'),
-                Output('stats-div','children')
+                Output('stats-div','children'),
+                Output('store-plan-svg','data'),
+                Output('store-profile-svg','data'),
                 ],
               [Input('submit-button-state', 'n_clicks'), 
                Input("checklist-input", "value"),
@@ -630,7 +678,7 @@ def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config
             editor_visible = EDITOR_SHOW
         
         
-        fig_p, stats = gplt.plot_gcode_2dprofile(pgc_filtered, draw_cutting_path=True,
+        fig_p, profile_data = gplt.plot_gcode_2dprofile(pgc_filtered, draw_cutting_path=True,
                                        draw_foam_block=True, draw_machine_block = False,
                                        num_of_points=-1)
         fig_p.update_yaxes(
@@ -660,7 +708,7 @@ def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config
             orientation="h"
         ))
         
-        fig_plan, stats = gplt.plot_gcode_2dplan(pgc_filtered, draw_cutting_path=True,draw_foam_block=True, 
+        fig_plan, plan_data = gplt.plot_gcode_2dplan(pgc_filtered, draw_cutting_path=True,draw_foam_block=True, 
                                     draw_machine_block = True, num_of_points=-1)
         fig_plan.update_yaxes(
             scaleanchor = "x",
@@ -708,8 +756,10 @@ def update_output(n_clicks, draw_selection, point_slider, keyboard_event, config
         gcode_output = "Error: %s" % str(e)
         editor_visible = EDITOR_SHOW
         stats_output = ""
+        plan_data = {}
+        profile_data = {}
     
-    return output_error_msg, fig, fig_p, fig_plan, gcode_output, editor_visible, stats_output
+    return output_error_msg, fig, fig_p, fig_plan, gcode_output, editor_visible, stats_output, plan_data, profile_data
 
 @app.callback(Output("chart-card","className"),
                Input("editor-card","style"))

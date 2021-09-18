@@ -319,6 +319,8 @@ class GcodePlotter():
                 )
             )
 
+        stats['left'] = {"x":pgcode_wing.X, "y":pgcode_wing.Y}
+        stats['right'] = {"x":pgcode_wing.U, "y":pgcode_wing.V}
         
         #fig.update_scenes(xaxis_autorange="reversed")
         return fig, stats
@@ -424,6 +426,9 @@ class GcodePlotter():
         wing_x.append(self.wing_plan[0][0] - delta_x)
         wing_y.append(self.wing_plan[0][1] - delta_y)
 
+        stats['x'] = wing_x
+        stats['y'] = wing_y
+
         x_coords = []
         y_coords = []
 
@@ -439,17 +444,6 @@ class GcodePlotter():
 
                 prev_x = x
                 prev_y = y
-
-
-#
-        #x1 = self.fbox.left + self.fbox.width
-        #y1 = min(pgcode_wing.round_U)
-#
-        #x2 = self.fbox.left + self.fbox.width
-        #y2 = max(pgcode_wing.round_U)
-#
-        #x3 = self.fbox.left
-        #y3 = max(pgcode_wing.round_X)
 
 
         fig.add_trace(
