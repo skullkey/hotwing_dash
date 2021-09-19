@@ -9,3 +9,4 @@ numexpr
 plotly>=4.0
 ezdxf
 svgpathtools
+simplification

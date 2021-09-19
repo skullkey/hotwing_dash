@@ -520,8 +520,11 @@ def download_profile_svg(n_nlicks, data, config_input):
     pn = cfg.get_config("Project","Name")
     filename = "%s_profile.svg" % removeDisallowedFilenameChars(pn)
 
-    left_path, left_bbox = dxf_parser.series_to_path(data["left"])
-    right_path, right_bbox = dxf_parser.series_to_path(data["right"])
+    data = dxf_parser.simplify_profile(data)
+    print(data)
+
+    left_path, left_bbox = dxf_parser.series_to_path(data['left'])
+    right_path, right_bbox = dxf_parser.series_to_path(data['right'])
 
     output = dxf_parser.paths_to_str([left_path, right_path],[left_bbox, right_bbox])
     return dict(content=output, filename=filename)
