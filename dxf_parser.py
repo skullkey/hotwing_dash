@@ -9,6 +9,8 @@ import os
 import numpy as np
 import utils
 from collections import OrderedDict
+from simplification.cutil import simplify_coords_vw_idx
+
 
 
 
@@ -334,24 +336,26 @@ def simplify_profile(data):
     x_series = left['x']
     left_dist = max(x_series) - min(x_series)
     y_series = left['y']
-    left_points = [(x,y) for x,y in zip(x_series,y_series)]
+    left_points = [[x,y] for x,y in zip(x_series,y_series)]
 
     x_series = right['x']
     y_series = right['y']
     right_dist = max(x_series) - min(x_series)
-    right_points = [(x,y) for x,y in zip(x_series,y_series)]
+    right_points = [[x,y] for x,y in zip(x_series,y_series)]
 
     if left_dist > right_dist:
-        new_left_points, idxs = visvalingham_whyatt(left_points, min_points = 50, inplace=False)
-        new_left_points.append(left_points[0]) # close the profile
-        new_right_points = [right_points[i] for i in idxs]
-        new_right_points.append(right_points[0]) # close the profile
+        idxs = simplify_coords_vw_idx(left_points, 0.1)
 
     else:
-        new_right_points, idxs = visvalingham_whyatt(right_points, min_points = 50, inplace=False)
-        new_right_points.append(right_points[0]) # close the profile
-        new_left_points = [left_points[i] for i in idxs]
-        new_left_points.append(left_points[0]) # close the profile
+        idxs = simplify_coords_vw_idx(right_points, 0.1)
+
+
+
+    new_left_points = [left_points[i] for i in idxs]
+    new_left_points.append(left_points[0]) # close the profile
+
+    new_right_points = [right_points[i] for i in idxs]
+    new_right_points.append(right_points[0]) # close the profile
 
     print(new_left_points)
     print(new_right_points)
@@ -365,120 +369,3 @@ def simplify_profile(data):
     output['right']['y'] = [a[1] for a in new_right_points]
 
     return output
-
-
-# from https://dougfenstermacher.com/blog/simplification-summarization
-import math
-
-
-def triangle_area(a, b, c):
-    a = np.array(a)
-    b = np.array(b)
-    c = np.array(c)
-
-    ab = a - b
-    ab_dist = np.linalg.norm(ab)
-
-    cb = c - b
-    cb_dist = np.linalg.norm(cb)
-    fraction = np.dot(ab, cb) / (ab_dist * cb_dist)
-    if fraction > 1. :
-        fraction = 1.
-    elif fraction < -1.:
-        fraction = -1.
-    theta = math.acos(fraction)
-    return 0.5 * ab_dist * cb_dist * math.sin(theta)
-
-
-def visvalingham_whyatt(points, **kwargs):
-    """
-    Visvalingham-Whyatt algorithm for polyline simplification
-
-    Runs in  linear O(n) time
-
-    Parameters:
-        points(list): list of sequential points in the polyline
-
-    Keyword Arguments:
-        min_points(int):  Minimum number of points in polyline, defaults to 2
-        inplace (bool):  Indicates if the input polyline should remove points from the input list, defaults to False
-
-    Returns:
-        list: A list of min_points of the simplified polyline
-    """
-    point_count = len(points)
-    if not kwargs.get('inplace', False):
-        new_points = list(points)
-    else:
-        new_points = points
-    areas = [float('inf')]
-    point_indexes = list(range(point_count -1))
-    for i in range(1, point_count - 1):
-        area = triangle_area(points[i - 1], points[i], points[i + 1])
-        areas.append(area)
-
-    min_points = kwargs.get('min_points', 2)
-    while len(new_points) > min_points:
-        smallest_effective_index = min(point_indexes, key=lambda i: areas[i])
-        new_points.pop(smallest_effective_index)
-        areas.pop(smallest_effective_index)
-        point_count = len(new_points)
-        point_indexes = list(range(point_count -1))
-        # recompute area for point after previous_smallest_effective_index
-        if smallest_effective_index > 1:
-            areas[smallest_effective_index - 1] = triangle_area(new_points[smallest_effective_index - 2], new_points[smallest_effective_index - 1], new_points[smallest_effective_index])
-        # recompute area for point before previous smallest_effective_index
-        if smallest_effective_index < point_count - 1:
-            areas[smallest_effective_index] = triangle_area(new_points[smallest_effective_index - 1], new_points[smallest_effective_index], new_points[smallest_effective_index + 1])
-    return new_points, point_indexes
-
-
-
-def perpendicular_distance(point, a, b):
-    """
-    perpendicular distance between a point and a line segment
-
-    Arguments:
-        point (tuple|list): The point
-        a (tuple|list): The start point of the line segment
-        b (tuple|list): The end point of the line segment
-
-    Returns:
-        float: perpendicular distance
-    """
-    point = np.array(point)
-    a = np.array(a)
-    b = np.array(b)
-    ba = b - a
-    numerator = np.linalg.norm(np.cross(ba, b-point))
-    denominator = np.linalg.norm(ba)
-    return numerator/denominator
-
-
-def ramer_douglas_peucker(points, epsilon):
-    """
-    Algorithm that decimates a curve composed of line segments to a similar curve with fewer points
-
-    Arguments:
-        points(list): list of sequential points in the polyline
-        epsilon (int|float): The maximum distance from the existing line to be considered an essential point
-
-    Returns:
-        list:  The simplified polyline
-    """
-    dmax = 0
-    index = 0
-
-    for i in range(1, len(points) - 1):
-        d = perpendicular_distance(points[i], points[0], points[-1])
-        if d > dmax:
-            index = i
-            dmax = d
-
-    if dmax > epsilon:
-        results1 = ramer_douglas_peucker(points[:index + 1], epsilon)[:-1]
-        results2 = ramer_douglas_peucker(points[index:], epsilon)
-        results = results1 + results2
-    else:
-        results = [points[0], points[-1]]
-    return results

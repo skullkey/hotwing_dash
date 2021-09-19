@@ -521,7 +521,6 @@ def download_profile_svg(n_nlicks, data, config_input):
     filename = "%s_profile.svg" % removeDisallowedFilenameChars(pn)
 
     data = dxf_parser.simplify_profile(data)
-    print(data)
 
     left_path, left_bbox = dxf_parser.series_to_path(data['left'])
     right_path, right_bbox = dxf_parser.series_to_path(data['right'])

@@ -1,0 +1,104 @@
+import FreeCAD,Draft
+from PySide import QtCore, QtGui
+import FreeCAD, Part 
+import importSVG
+import PySide
+from PySide import QtGui ,QtCore
+import os
+
+class Ui_Dialog(object):
+	def setupUi(self, Dialog):
+		Dialog.setObjectName("Dialog")
+		Dialog.resize(187, 178)
+		self.title = QtGui.QLabel(Dialog)
+		self.title.setGeometry(QtCore.QRect(10, 10, 271, 16))
+		self.title.setObjectName("title")
+		self.label_width = QtGui.QLabel(Dialog)
+		self.label_width.setGeometry(QtCore.QRect(10, 50, 57, 16))
+		self.label_width.setObjectName("label_width")
+
+		self.width = QtGui.QLineEdit(Dialog)
+		self.width.setGeometry(QtCore.QRect(60, 40, 111, 26))
+		self.width.setObjectName("width")
+
+		self.create = QtGui.QPushButton(Dialog)
+		self.create.setGeometry(QtCore.QRect(50, 140, 83, 26))
+		self.create.setObjectName("create")
+
+		self.retranslateUi(Dialog)
+		QtCore.QObject.connect(self.create,QtCore.SIGNAL("pressed()"),self.createPlane)
+		QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+	def retranslateUi(self, Dialog):
+		Dialog.setWindowTitle("Dialog")
+		self.title.setText("Hotwing Profile")
+		self.label_width.setText("Width")
+		self.width.setText('500')
+		self.create.setText("Create!")
+
+	def createPlane(self):
+		try:
+			w = float(self.width.text())
+		except ValueError:
+			print("Error! Width value must be valid numbers!")
+		else:
+
+			doc = FreeCAD.ActiveDocument
+			objs_before = FreeCAD.ActiveDocument.Objects
+
+			importSVG.insert(self.filename, doc.Name)
+			objs_after = FreeCAD.ActiveDocument.Objects
+
+			objs = []
+
+			for obj in objs_after:
+				if obj not in objs_before:
+					objs.append(obj)
+					obj.Visibility = False
+			
+			sketches = []
+			sketches.append(Draft.makeSketch(objs[0]))
+			sketches.append(Draft.makeSketch(objs[1]))
+			body = doc.addObject('PartDesign::Body','Body')
+			body_number = body.Name[4:]
+			
+			body.addObjects(sketches)
+			
+			XY = body.getObject('XY_Plane%s' % body_number)
+			
+			dp = body.newObject('PartDesign::Plane','DatumPlane')
+			dp.Support = [(XY,'')]
+			dp.MapMode = 'FlatFace'
+			
+			dp.AttachmentOffset = App.Placement(App.Vector(0.0000000000, 0.0000000000, w),  App.Rotation(0.0000000000, 0.0000000000, 0.0000000000))
+			dp.MapReversed = False
+			dp.MapPathParameter = 0.000000
+			
+			sketches[0].MapMode = "FlatFace"
+			sketches[0].Support = [(dp,'')]
+			
+			sketches[1].MapMode = "FlatFace"
+			sketches[1].Support = [(XY,'')]
+			
+			loft = body.newObject('PartDesign::AdditiveLoft','AdditiveLoft')
+			loft.Profile = sketches[0]
+			loft.Sections += [sketches[1]]
+			
+			sketches[0].Visibility = False
+			sketches[1].Visibility = False
+			dp.Visibility = False
+			
+			doc.recompute()
+
+
+class plane():
+	def __init__(self, filename):
+		self.d = QtGui.QWidget()
+		self.ui = Ui_Dialog()
+		self.ui.setupUi(self.d)
+		self.ui.filename = filename
+		self.d.show()
+
+
+OpenName, Filter = PySide.QtGui.QFileDialog.getOpenFileName(None, "Read a SVG file", os.path.expanduser("~/Downloads"),             "*.svg")
+p = plane(OpenName)
