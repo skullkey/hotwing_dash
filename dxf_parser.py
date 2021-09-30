@@ -306,10 +306,9 @@ def paths_to_str(paths, bboxes):
     doc = svgpathtools.wsvg(paths,paths2Drawing=True, dimensions=("%smm" % max_x,"%smm" % max_y),  stroke_widths=[1]*10)
     return doc.tostring()
 
-def series_to_path(data):
+def series_to_path(data, max_y):
     x_series = data['x']
     y_series = data['y']
-    max_y = max(y_series)
     y_series = [max_y - y for y in y_series]
 
     min_x = min(x_series)
@@ -356,9 +355,6 @@ def simplify_profile(data):
 
     new_right_points = [right_points[i] for i in idxs]
     new_right_points.append(right_points[0]) # close the profile
-
-    print(new_left_points)
-    print(new_right_points)
 
 
     #

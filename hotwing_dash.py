@@ -505,7 +505,7 @@ def download_plan_svg(n_nlicks, data, config_input):
     pn = cfg.get_config("Project","Name")
     filename = "%s_plan.svg" % removeDisallowedFilenameChars(pn)
 
-    path, bbox = dxf_parser.series_to_path(data)
+    path, bbox = dxf_parser.series_to_path(data, max(data['y']))
     output = dxf_parser.paths_to_str([path],[bbox])
     return dict(content=output, filename=filename)
 
@@ -522,8 +522,10 @@ def download_profile_svg(n_nlicks, data, config_input):
 
     data = dxf_parser.simplify_profile(data)
 
-    left_path, left_bbox = dxf_parser.series_to_path(data['left'])
-    right_path, right_bbox = dxf_parser.series_to_path(data['right'])
+    max_y = max(max(data['left']['y']), max(data['right']['y']))
+
+    left_path, left_bbox = dxf_parser.series_to_path(data['left'], max_y)
+    right_path, right_bbox = dxf_parser.series_to_path(data['right'], max_y)
 
     output = dxf_parser.paths_to_str([left_path, right_path],[left_bbox, right_bbox])
     return dict(content=output, filename=filename)
