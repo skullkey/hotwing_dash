@@ -170,9 +170,15 @@ class DxfToGCode:
 
     def to_selig(self, profilename):
         x_series, y_series, _,_ = self.to_xy_array(0,0,False, False)
+        
+        # simplify
+        points = [(x,y) for x,y in zip(x_series,y_series)]
+        idx = simplify_coords_vw_idx(points, 0.1)
 
+        x_series = [points[x][0] for x in idx]
+        y_series = [points[y][1] for y in idx]
 
-
+        # roll coordinates 
         items_to_shift = np.argmin(x_series)
 
         x_series = np.roll(x_series, -items_to_shift)
@@ -183,6 +189,7 @@ class DxfToGCode:
         org_y = y_series[0]
         x_series = np.array([x-org_x for x in x_series], dtype=np.double)
         y_series = np.array([y-org_y for y in y_series], dtype=np.double)
+
 
         max_index = np.argmax(x_series)
         max_x = np.max(x_series)
@@ -196,27 +203,54 @@ class DxfToGCode:
             x_series = np.roll(x_series, -items_to_shift)
             y_series = np.roll(y_series, -items_to_shift)
 
-        print(max_x, x_series[:3])
-        profile = [((max_x - x)/(max_x),y/(max_x)) for x,y in zip(x_series,y_series)]        
 
+        print(x_series, y_series)
         max_index = np.argmax(x_series)
+
+
+        #make sure x is unique
+        x_series_top = [round(x,3)+i/1000 for i,x in enumerate(x_series[:max_index+1])]
+        max_x_top = max(x_series_top)
+        min_x_top = min(x_series_top)
+        x_series_top = [( x -  min_x_top)/(max_x_top - min_x_top) for x in x_series_top[:-1]]
+        
+
+        x_series_bot = [round(x,3)-i/1000 for i,x in enumerate(x_series[max_index:])]
+        max_x_bot = max(x_series_bot)
+        min_x_bot = min(x_series_bot)
+        x_series_bot = [(x - min_x_bot)/(max_x_bot - min_x_bot) for x in x_series_bot]
+
+        #print(x_series_top, x_series_bot)
+
+        x_series = x_series_top
+        x_series.extend(x_series_bot)
+
+
+        profile = [((1. - x),y/(max_x)) for x,y in zip(x_series,y_series)]        
 
         # doing some gymnastics here because the selig format does not allow duplicate x-coordinates 
 
-        runs = utils.runs(x_series)
+        #runs = utils.runs(x_series)
 
-        profile_top =    list(OrderedDict( (round(xy[0],3)-i/100000. ,  (round(xy[0],3) - i/100000.,round(xy[1],3))) for i,xy in zip(runs[:max_index],profile[:max_index])).values())
-        profile_bottom = list(OrderedDict( (round(xy[0],3)+i/100000. ,  (round(xy[0],3) + i/100000.,round(xy[1],3))) for i,xy in zip(runs[max_index:],profile[max_index:])).values())
+        #profile_top =    OrderedDict( (round(xy[0],3)-i/100000. ,  (round(xy[0],3) - i/100000.,round(xy[1],3))) for i,xy in zip(runs[:max_index],profile[:max_index])).values()
+        #profile_bottom = OrderedDict( (round(xy[0],3)+i/100000. ,  (round(xy[0],3) + i/100000.,round(xy[1],3))) for i,xy in zip(runs[max_index:],profile[max_index:])).values()
+        #profile_top.extend(profile_bottom)
+        #if profile[-1] != (1.,0.):
+        #    profile_top.append(profile_top[0])
+
+        profile_top = [(x,round(y,3)) for (x,y) in profile[:max_index]]
+        profile_bottom = [(x, round(y,3)) for (x,y) in profile[max_index:]]
         profile_top.extend(profile_bottom)
-        if profile[-1] != (1.,0.):
-            profile_top.append(profile_top[0])
+        #if profile_top[-1] != (1.,0.):
+        #    profile_top.append(profile_top[0])
+
+
 
         output = [profilename]
         for x,y in profile_top:
             output.append("    %.5f     %.3f" % (x,y))
 
         return output
-
 
 
 
