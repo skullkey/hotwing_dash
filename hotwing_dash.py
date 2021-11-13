@@ -308,16 +308,22 @@ dxf2gcode_tab_layout = html.Div([
                     dbc.Col([
                         'Filename',
                         dbc.Input(id="uploaded-filename", className="mr-2",type='text',disabled = True, value=''),
-                    ], className='col-3'),
+                    ], className='col-2'),
                     dbc.Col([
                         'X-Offset',
                         dbc.Input(id="d2g-x-offset", className="mr-2", type='number', value=0),
-                    ], className='col-3'),
+                    ], className='col-2'),
                     dbc.Col([
                         'Y-Offset',
                         dbc.Input(id="d2g-y-offset", className="mr-2", type='number', value=0),
 
-                    ], className='col-3'),
+                    ], className='col-2'),
+                    dbc.Col([
+                        'Rotate',
+                        dbc.Input(id="d2g-rotate-angle", className="mr-2", type='number', value=0),
+
+                    ], className='col-2'),
+
                     dbc.Col([
                         html.Br(),
                         dbc.Button(id='d2g-submit-button', n_clicks=0, children='Update', color="primary", className="mr-2"),
@@ -334,22 +340,27 @@ dxf2gcode_tab_layout = html.Div([
                             ],
                             value='4',
                         ) , 
-                    ], className='col-3'),
+                    ], className='col-2'),
                     dbc.Col([
                         'Feedrate',
                         dbc.Input(id="d2g-feedrate", className="mr-2", type='number', value=160),
-                    ], className='col-3'),
+                    ], className='col-2'),
                     dbc.Col([
                         'PWM',
                         dbc.Input(id="d2g-pwm", className="mr-2", type='number', value=60),
-                    ], className='col-3'),
+                    ], className='col-2'),
+                    dbc.Col([
+                        'Scale',
+                        dbc.Input(id="d2g-scale-factor", className="mr-1", type='number', value=1),
+
+                    ], className='col-2'),
 
                     dbc.Col([
                         html.Br(),
                         dbc.Button(id='d2g-download-button', n_clicks=0, children='Download', color="success", className="mr-2"),
                         dbc.Button(id='d2g-selig-button', n_clicks=0, children='Selig', color="success", className="mr-2"),
 
-                    ], className='col-3'),
+                    ], className='col-2'),
 
                 ]),
 
@@ -375,10 +386,14 @@ dxf2gcode_tab_layout = html.Div([
 @app.callback([Output("d2g_graph_profile", "figure"), Output("d2g-filename","value"), 
                 Output('uploaded-filename','value'), Output('d2g-profile-view','style'),
                 Output('d2g-x-offset','value'), Output('d2g-y-offset','value'),
+               Output('d2g-rotate-angle','value'), Output('d2g-scale-factor','value'), 
                 Output('d2g-tmp-url','href')], 
-              [Input('d2g-upload-data',"contents"), Input('d2g-submit-button','n_clicks'), Input('d2g-x-offset','value'), Input('d2g-y-offset','value'),  ],
+              [Input('d2g-upload-data',"contents"), Input('d2g-submit-button','n_clicks'),
+               Input('d2g-x-offset','value'), Input('d2g-y-offset','value'), 
+               Input('d2g-rotate-angle','value'), Input('d2g-scale-factor','value'), 
+                ],
               [ State('d2g-filename','value'), State('d2g-upload-data', 'filename'),])
-def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename):
+def draw_dxf(contents, n, x_offset, y_offset, rotate_angle, scale_factor, stored_filename, uploaded_filename):
 
     ctx = dash.callback_context
 
@@ -404,7 +419,7 @@ def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename
 
         dxfp = dxf_parser.create_parser(stored_filename)
 
-        x_series, y_series, x_offset, y_offset = dxfp.to_xy_array(x_offset, y_offset, ignore_offset= button_id == "d2g-upload-data")
+        x_series, y_series, x_offset, y_offset, rotate_angle, scale_factor = dxfp.to_xy_array(x_offset, y_offset,rotate_angle, scale_factor, ignore_offset= button_id == "d2g-upload-data")
 
         fig = go.Figure()
 
@@ -422,7 +437,7 @@ def draw_dxf(contents, n, x_offset, y_offset, stored_filename, uploaded_filename
 
 
 
-        return fig, stored_filename, uploaded_filename, {'display':''}, x_offset, y_offset, f"/selig{stored_filename}.dat"
+        return fig, stored_filename, uploaded_filename, {'display':''}, x_offset, y_offset, rotate_angle , scale_factor, f"/selig{stored_filename}.dat"
 
 
 @server.route('/selig/<path:filename>')
@@ -440,13 +455,14 @@ def selig_link(filename):
 @app.callback(Output('download-d2g-gcode','data'), Input('d2g-download-button','n_clicks'), 
                 [State('uploaded-filename','value'), State('d2g-filename','value'), 
                 State('d2g-x-offset','value'), State('d2g-y-offset','value'),
+                 State('d2g-rotate-angle','value'), State('d2g-scale-factor','value'), 
                 State('d2g-four-axes','value'), State('d2g-feedrate','value'), State('d2g-pwm','value')
 
                 ], prevent_initial_call=True)
-def download_d2g_gcode(n_clicks, uploaded_filename, stored_filename, x_offset, y_offset, four_axis, feedrate, pwm):
+def download_d2g_gcode(n_clicks, uploaded_filename, stored_filename, x_offset, y_offset,rotate_angle,scale_factor, four_axis, feedrate, pwm):
 
     dxfp = dxf_parser.create_parser(stored_filename)
-    gcode = dxfp.to_gcode(x_offset, y_offset, four_axis=='4', feedrate, pwm)
+    gcode = dxfp.to_gcode(x_offset, y_offset, rotate_angle, scale_factor, four_axis=='4', feedrate, pwm)
 
     _,extension =  os.path.splitext(stored_filename)
     extension = extension.lower()
@@ -461,11 +477,12 @@ def download_d2g_gcode(n_clicks, uploaded_filename, stored_filename, x_offset, y
 @app.callback(Output('download-d2g-selig','data'), Input('d2g-selig-button','n_clicks'),
         [State('uploaded-filename','value'), State('d2g-filename','value'), 
                 State('d2g-x-offset','value'), State('d2g-y-offset','value'),
+                  State('d2g-rotate-angle','value'), State('d2g-scale-factor','value'), 
                 State('d2g-four-axes','value'), State('d2g-feedrate','value'), State('d2g-pwm','value')
         ])
-def download_selig(selig_clicks,  uploaded_filename, stored_filename, x_offset, y_offset, four_axis, feedrate, pwm):
+def download_selig(selig_clicks,  uploaded_filename, stored_filename, x_offset, y_offset, rotate_angle, scale_factor, four_axis, feedrate, pwm):
     dxfp = dxf_parser.create_parser(stored_filename)  
-    output = dxfp.to_selig(uploaded_filename)
+    output = dxfp.to_selig(uploaded_filename, x_offset, y_offset, rotate_angle, scale_factor)
     
     return dict(content="\n".join(output), filename = uploaded_filename+".dat")  
 

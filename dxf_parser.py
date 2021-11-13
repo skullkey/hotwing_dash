@@ -12,6 +12,14 @@ from collections import OrderedDict
 from simplification.cutil import simplify_coords_vw_idx
 
 
+def rotate(p, origin=(0, 0), degrees=0):
+    angle = np.deg2rad(degrees)
+    R = np.array([[np.cos(angle), -np.sin(angle)],
+                  [np.sin(angle),  np.cos(angle)]])
+    o = np.atleast_2d(origin)
+    p = np.atleast_2d(p)
+    return np.squeeze((R @ (p.T-o.T) + o.T).T)
+
 
 
 class GCodeObj:
@@ -120,11 +128,11 @@ class DxfToGCode:
         return None
     
     
-    def to_gcode(self,x_offset, y_offset, four_axis, feedrate = 160, pwm = 100):
-        gcode_list = [f"; x_offset = {x_offset}", f"; y_offset = {y_offset}"]
+    def to_gcode(self,x_offset, y_offset, rotate_angle, scale_factor, four_axis, feedrate = 160, pwm = 100):
+        gcode_list = [f"; x_offset = {x_offset}", f"; y_offset = {y_offset}", f"; rotate_angle = {rotate_angle}", f" scale_factor = {scale_factor}"]
         gcode_list.extend(["G21","G90","G1 F%.3f" % feedrate, "M3 S%d" % pwm ])
         
-        x_series, y_series, _, _ = self.to_xy_array(x_offset, y_offset)
+        x_series, y_series, _, _, _, _ = self.to_xy_array(x_offset, y_offset, rotate_angle, scale_factor)
         coord_list = zip(x_series, y_series)
         
         if four_axis:
@@ -135,7 +143,7 @@ class DxfToGCode:
         gcode_list.append("M5")
         return gcode_list 
 
-    def to_xy_array(self, x_offset, y_offset, ignore_offset=False, add_zero=True):
+    def to_xy_array(self, x_offset, y_offset, rotate_angle, scale_factor, ignore_offset=False, add_zero=True):
         start_x,start_y =  self.find_first_xy()
 
         self._reset_gco_list()
@@ -145,6 +153,13 @@ class DxfToGCode:
         while obj is not None:
             obj.to_gcode(coord_list)
             obj = self.find_next(obj.last_point())  
+
+        if not ignore_offset:
+            coord_list = [(x * scale_factor,y * scale_factor) for x,y in coord_list  ]
+            coord_list = rotate(coord_list, degrees = rotate_angle)
+        else:
+            scale_factor = 1.
+            rotate_angle = 0.
 
         min_x = min([x for x,y in coord_list])
         min_y = min([y for x,y in coord_list])
@@ -166,10 +181,10 @@ class DxfToGCode:
             y_series.insert(0,0)
             y_series.append(0)
 
-        return x_series, y_series, x_offset, y_offset
+        return x_series, y_series, x_offset, y_offset, rotate_angle, scale_factor
 
-    def to_selig(self, profilename):
-        x_series, y_series, _,_ = self.to_xy_array(0,0,False, False)
+    def to_selig(self, profilename, x_offset, y_offset, rotate_angle, scale_factor):
+        x_series, y_series, _,_,_,_ = self.to_xy_array(x_offset,y_offset, rotate_angle, scale_factor, False, False)
         
         # simplify
         points = [(x,y) for x,y in zip(x_series,y_series)]
