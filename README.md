@@ -198,9 +198,11 @@ and bottom alignment:
 **Dihedral** - sets the dihedral in degrees - ignored if **VerticalAlignProfiles** is not set to "diheral"
 
 **StockTrailingEdge** - Useful for trimming the wing for ailerons or elevons as shown in the following example, with StockTrailingEdge=40. After cutting the wing the wire moves to **SafeHeight**, moves horizontally over the foam and performs a vertical cut at the specified distance from the leading edge:
+
 ![tail stock](static/tailstock.png)
 
 **StockTrailingEdgeAngle** - (Experimental) Angle at which to trim the trailing edge, useful when using square balsa control surfaces to get a precise hinge
+
 ![tail stock angle](static/tailstockangle.png)
 
 **StockLeadingEdge** - Similar to the trailing edge, the leading edge can also be trimmed
