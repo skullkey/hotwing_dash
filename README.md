@@ -245,6 +245,7 @@ Note that if the HorizontalOffset leads to an infeasible cut (i.e. negative mach
 ![plan offset cutpath](static/horz_vert_offset_plan_cutpath.png)
 
 **RotateWing** - Rotate the wing so that the leading edge is aligned with the hot wire.  Useful for highly swept-back wings.  Valid values are "yes" or "no".  For example:
+
 ![rotate](static/rotate.png)
 
 
