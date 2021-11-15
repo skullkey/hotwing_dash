@@ -107,6 +107,7 @@ RotationPosition = 0.5
 **ProfileThickness** - Thickness as percentage (optional).  For example 10, means the profile thickness is scaled to be max 10% of the chord.
 
 For example - profile at 3% (ProfileThickness = 3)
+
 ![Offset Example 1](static/profile_3.png) 
 
 vs
