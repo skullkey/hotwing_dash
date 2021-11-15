@@ -114,6 +114,8 @@ class GcodeGen():
         get_config = self.config.get_config
         root_offset =  get_config('Placement','RootChordOffset')
         side = get_config('Wing','TipChordSide')
+        root_profile_thickness = get_config('RootChord','ProfileThickness')
+        tip_profile_thickness = get_config('TipChord', 'ProfileThickness')
 
         root_profile_filename = self.pcache.get_profile_filename(get_config('RootChord',"Profile"))
 
@@ -131,7 +133,7 @@ class GcodeGen():
 
         tip_profile_filename = self.pcache.get_profile_filename(get_config('TipChord',"Profile"))
 
-        rib2 = Rib( tip_profile_filename, 
+        rib2 = Rib( tip_profile_filename,
                             scale=get_config('TipChord',"Width"), 
                             xy_offset=Coordinate(get_config('TipChord',"LeadingEdgeOffset"),0), 
                             top_sheet=get_config('Wing',"SheetingTop"), 
@@ -204,7 +206,8 @@ class GcodeGen():
         inverted = get_config("Wing","Inverted")
 
 
-        bbox, wing = cs.cut(get_config("Placement","HorizontalOffset"), 
+        bbox, wing = cs.cut(get_config("Placement","HorizontalOffset"),
+               root_profile_thickness, tip_profile_thickness, 
                vertical_offset_left, 
                vertical_offset_right, 
                vertical_align_profiles,

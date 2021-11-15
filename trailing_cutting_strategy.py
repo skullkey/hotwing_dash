@@ -12,7 +12,9 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
     """
     Trailing edge first cutting strategy
     """
-    def cut(self, horizontal_offset, vertical_offset_left = 0, 
+    def cut(self, horizontal_offset, 
+                root_profile_thickness, tip_profile_thickness,
+                vertical_offset_left = 0, 
                 vertical_offset_right = None,   vertical_align_profiles = "default",  
                 dihedral = 0.0, inverted = False, rotate=False, fix_left_offset = None, tail_stock_angle=0):
 
@@ -40,6 +42,19 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
         mult = 1.0
         if inverted:
             mult = -1.0
+
+
+        # Scale profile 
+        if root_profile_thickness > 0:
+            profile1_scale = root_profile_thickness / 100. / self.get_profile_thickness(profile1)
+        else:
+            profile1_scale = 1.
+
+        if tip_profile_thickness >0:
+            profile2_scale = tip_profile_thickness / 100. / self.get_profile_thickness(profile2)
+        else:
+            profile2_scale = 1.
+        
 
         # auto aligning of profiles
         if vertical_align_profiles == "default":
@@ -72,14 +87,14 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
         # we want it to start with trailing edge
         # so we reverse it
         profile1.top.coordinates = [Coordinate(profile_max - c.x + horizontal_offset + te_offset, \
-                                    mult * c.y + vertical_offset_left) for c in reversed(profile1.top.coordinates)]
+                                    profile1_scale * mult * c.y + vertical_offset_left) for c in reversed(profile1.top.coordinates)]
         profile1.bottom.coordinates = [Coordinate(profile_max - c.x + horizontal_offset + te_offset, \
-                                    mult * c.y + vertical_offset_left) for c in reversed(profile1.bottom.coordinates)]
+                                    profile1_scale * mult * c.y + vertical_offset_left) for c in reversed(profile1.bottom.coordinates)]
 
         profile2.top.coordinates = [Coordinate(profile_max - c.x + horizontal_offset + te_offset, \
-                                    mult * c.y + vertical_offset_right) for c in reversed(profile2.top.coordinates)]
+                                    profile2_scale * mult * c.y + vertical_offset_right) for c in reversed(profile2.top.coordinates)]
         profile2.bottom.coordinates = [Coordinate(profile_max - c.x + horizontal_offset + te_offset, \
-                                    mult * c.y + vertical_offset_right) for c in reversed(profile2.bottom.coordinates)]
+                                    profile2_scale * mult * c.y + vertical_offset_right) for c in reversed(profile2.bottom.coordinates)]
 
 
 
@@ -367,3 +382,20 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
                 self.machine.gc.dwell(dwell_time)
 
         self.machine.gc.dwell(dwell_time)
+
+
+    def get_profile_thickness(self, profile1):
+        a_bounds_min, a_bounds_max = profile1.top.bounds
+        b_bounds_min, b_bounds_max = profile1.bottom.bounds
+
+        a_width = a_bounds_max.x - a_bounds_min.x
+        b_width = b_bounds_max.x - b_bounds_min.x
+
+        thickness = 0
+        for i in range(self.machine.profile_points):
+            pct = i / self.machine.profile_points
+            c1 = profile1.top.interpolate_around_profile_dist_pct(pct)
+            c2 = profile1.bottom.interpolate_around_profile_dist_pct(pct)
+            thickness = max(thickness, c1.y-c2.y)
+
+        return thickness/a_width

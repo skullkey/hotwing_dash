@@ -104,6 +104,8 @@ RotationPosition = 0.5
 
 **Profile** - The profile is a URL to the airfoil coordinates. The software accepts Selig and Lednicer type coordinates files
 
+**ProfileThickness** - Thickness as percentage (optional).  For example 10, means the profile thickness is scaled to be max 10% of the chord.
+
 **Width** - We know the width from the design above is 330mm at the root.
 
 **LeadingEdgeOffset** - We want the tip of the airfoil to be at 0 - I.E. we don't want to move it.
