@@ -265,8 +265,13 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
             angle = tail_stock_angle
 
 
-            angle_top_offset1 = (m.foam_height*1.1 - profile1.left_midpoint.y)* math.tan(math.pi/180*angle)
-            angle_top_offset2 = (m.foam_height*1.1 - profile2.left_midpoint.y)* math.tan(math.pi/180*angle)
+            angle_top_offset1 = (m.safe_height - profile1.left_midpoint.y)* math.tan(math.pi/180*angle)
+            angle_top_offset2 = (m.safe_height - profile2.left_midpoint.y)* math.tan(math.pi/180*angle)
+
+            angle_top_foam_offset1 = (m.foam_height - profile1.left_midpoint.y)* math.tan(math.pi/180*angle)
+            angle_top_foam_offset2 = (m.foam_height - profile2.left_midpoint.y)* math.tan(math.pi/180*angle)
+
+
             angle_bottom_offset1 = (profile1.left_midpoint.y) * math.tan(math.pi/180*angle)
             angle_bottom_offset2 = (profile2.left_midpoint.y) * math.tan(math.pi/180*angle)
 
@@ -276,6 +281,12 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
                 Coordinate(profile2.left_midpoint.x + r2_stock - m.kerf[1] - angle_top_offset2,0)
             )
 
+            fs_foam_pos = self.calculate_move(
+                Coordinate(profile1.left_midpoint.x + r1_stock - m.kerf[0] - angle_top_foam_offset1,m.foam_height),
+                Coordinate(profile2.left_midpoint.x + r2_stock - m.kerf[1] - angle_top_foam_offset2,m.foam_height)
+            )
+
+
             fs_pos_bot = self.calculate_move(
                 Coordinate(profile1.left_midpoint.x + r1_stock - m.kerf[0] + angle_bottom_offset1,0),
                 Coordinate(profile2.left_midpoint.x + r2_stock - m.kerf[1] + angle_bottom_offset2,0)
@@ -283,17 +294,17 @@ class TrailingEdgeCuttingStrategy(CuttingStrategyBase):
 
 
             # MOVE HORIZONTALLY TO ABOVE TAIL STOCK
-            m.gc.fast_move({'x':fs_pos['x'],'u':fs_pos['u']}, ['tail_stock'] )
+            m.gc.fast_move({'x':fs_foam_pos['x'],'u':fs_foam_pos['u']}, ['tail_stock'] )
 
             # MOVE DOWN TO JUST ABOVE FOAM
-            m.gc.fast_move( {'y':m.foam_height,'v':m.foam_height}, ["do_not_normalize", "tail_stock"] )
+            m.gc.fast_move( fs_foam_pos, [ "tail_stock"] )
 
             # CUT DOWN TO 0 HEIGHT
-            m.gc.move( {'y':0,'v':0,'x':fs_pos_bot['x'], 'u':fs_pos_bot['u']}, [ "tail_stock"] )
+            m.gc.move( {'y':0,'v':0,'x':fs_pos_bot['x'], 'u':fs_pos_bot['u']}, ["tail_stock"] )
 
             # CUT UP TO JUST ABOVE FOAM
-            m.gc.move( {'y':m.foam_height,'v':m.foam_height, 'x':fs_pos['x'],'u':fs_pos['u']}, [ "tail_stock"] )
-            m.gc.fast_move( {'y':m.foam_height*1.1,'v':m.foam_height*1.1}, ["do_not_normalize", "tail_stock"] )
+            m.gc.move( fs_foam_pos, [ "tail_stock"] )
+            #m.gc.fast_move( {'y':m.safe_height,'v':m.safe_height}, ["do_not_normalize", "tail_stock"] )
 
             # MOVE UP TO SAFE HEIGHT
             m.gc.fast_move( {'y':m.safe_height,'v':m.safe_height}, ["do_not_normalize", "tail_stock"] )

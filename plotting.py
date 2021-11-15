@@ -409,12 +409,12 @@ class GcodePlotter():
         delta_x = 0 
 
 
-        # bottom from projection
-        y0 = float(min(pgcode_wing.round_X))
+        # top from projection
+        y_top = float(max(pgcode_wing.round_X))
 
-        # bottom  from wingplan
-        bl = self.wing_plan[-1]
-        delta_y = bl[1] - y0
+        # top  from wingplan
+        bl = self.wing_plan[0]
+        delta_y = bl[1] - y_top
 
         # overlay the wing plan on the projected location
         wing_x = []
