@@ -173,10 +173,10 @@ class GcodePlotter():
 
 
     def make_foam_block(self):
-        x = np.array([0,0,1,1,0,0,1,1], np.float) * (self.fbox.width) + self.fbox.left
-        y = np.array([0,1,1,0,0,1,1,0],np.float) * self.fbox.depth + self.fbox.inset
+        x = np.array([0,0,1,1,0,0,1,1], float) * (self.fbox.width) + self.fbox.left
+        y = np.array([0,1,1,0,0,1,1,0],float) * self.fbox.depth + self.fbox.inset
 
-        z = np.array([0,0,0,0,1,1,1,1], np.float) * self.fbox.height + self.fbox.bottom
+        z = np.array([0,0,0,0,1,1,1,1], float) * self.fbox.height + self.fbox.bottom
         i = [7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2]
         j = [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3]
         k = [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6]
